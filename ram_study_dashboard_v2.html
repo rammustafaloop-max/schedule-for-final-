@@ -1,0 +1,606 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.dash{padding:1rem 0;}
+.nav{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;}
+.nvb{padding:6px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);}
+.nvb.active{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500;}
+.view{display:none;}
+.view.show{display:block;}
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem;}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary);}
+.stat-sub{font-size:10px;color:var(--color-text-tertiary);margin-top:2px;}
+.today-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:1rem;}
+.today-header{padding:12px 16px;background:#EEEDFE;border-bottom:0.5px solid #AFA9EC;}
+.today-title{font-size:15px;font-weight:500;color:#3C3489;}
+.today-sub{font-size:11px;color:#534AB7;margin-top:2px;}
+.task-row{display:flex;align-items:flex-start;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;transition:background 0.1s;}
+.task-row:last-child{border-bottom:none;}
+.task-row:hover{background:var(--color-background-secondary);}
+.task-row.done .task-main{text-decoration:line-through;color:var(--color-text-tertiary);}
+.chk{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--color-border-secondary);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;}
+.chk.checked{border-color:#534AB7;background:#534AB7;}
+.chk-tick{width:8px;height:8px;display:none;}
+.chk.checked .chk-tick{display:block;}
+.task-body{flex:1;}
+.task-main{font-size:13px;color:var(--color-text-primary);line-height:1.4;transition:all 0.2s;}
+.task-note{font-size:11px;color:var(--color-text-secondary);margin-top:2px;}
+.subj-pill{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;margin-right:5px;vertical-align:middle;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:1rem;}
+.cal-header-cell{text-align:center;font-size:10px;color:var(--color-text-tertiary);padding:4px 0;font-weight:500;}
+.cal-day{border-radius:var(--border-radius-md);padding:5px 3px;text-align:center;cursor:pointer;border:0.5px solid transparent;min-height:48px;}
+.cal-day:hover{border-color:var(--color-border-secondary);}
+.cal-day.today{border-color:#7F77DD;background:#EEEDFE;}
+.cal-day.selected{border-color:#534AB7;background:#EEEDFE;}
+.cal-day.past{opacity:0.45;}
+.cal-day.exam-day{background:#FCEBEB;border-color:#F09595;}
+.cal-day.study-leave{background:#FAEEDA;border-color:#EF9F27;}
+.cal-day.empty{cursor:default;border:none;min-height:0;}
+.cal-num{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+.cal-dots{display:flex;justify-content:center;gap:2px;margin-top:3px;flex-wrap:wrap;}
+.cal-dot{width:5px;height:5px;border-radius:50%;}
+.progress-bar-wrap{background:var(--color-background-secondary);border-radius:var(--border-radius-md);overflow:hidden;height:6px;margin-top:4px;}
+.progress-bar{height:6px;border-radius:var(--border-radius-md);background:#7F77DD;transition:width 0.4s;}
+.subj-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.subj-row:last-child{border-bottom:none;}
+.phase-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+
+.sad-overlay{display:none;position:absolute;top:0;left:0;width:100%;min-height:100%;background:var(--color-background-primary);z-index:100;padding:2rem 1rem;text-align:center;}
+.sad-overlay.show{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+.sad-face{width:80px;height:80px;position:relative;margin:0 auto;}
+</style>
+
+<div style="position:relative;" id="appRoot">
+
+<div class="dash" id="mainDash">
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;">Ram's finals study dashboard</h2>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+  <div>
+    <div style="font-size:18px;font-weight:500;color:var(--color-text-primary);">Ram's study dashboard</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);" id="liveTime"></div>
+  </div>
+  <div id="countdown-badge" style="padding:6px 14px;border-radius:var(--border-radius-md);background:#FCEBEB;border:0.5px solid #F09595;font-size:12px;font-weight:500;color:#A32D2D;"></div>
+</div>
+
+<div class="nav">
+  <button class="nvb active" onclick="showView('today',this)">Today</button>
+  <button class="nvb" onclick="showView('calendar',this)">Calendar</button>
+  <button class="nvb" onclick="showView('subjects',this)">By subject</button>
+  <button class="nvb" onclick="showView('progress',this)">Progress</button>
+</div>
+
+<div id="view-today" class="view show"></div>
+<div id="view-calendar" class="view"></div>
+<div id="view-subjects" class="view"></div>
+<div id="view-progress" class="view"></div>
+</div>
+
+<div class="sad-overlay" id="sadPage">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="42" fill="#FCEBEB" stroke="#F09595" stroke-width="1"/>
+    <circle cx="32" cy="36" r="4" fill="#A32D2D"/>
+    <circle cx="58" cy="36" r="4" fill="#A32D2D"/>
+    <path d="M28 62 Q45 50 62 62" stroke="#A32D2D" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M26 28 L32 33" stroke="#A32D2D" stroke-width="2" stroke-linecap="round"/>
+    <path d="M64 28 L58 33" stroke="#A32D2D" stroke-width="2" stroke-linecap="round"/>
+    <path d="M38 20 Q40 16 42 20" stroke="#A32D2D" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M48 20 Q50 16 52 20" stroke="#A32D2D" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);">Day's over, Ram.</div>
+  <div style="font-size:14px;color:var(--color-text-secondary);max-width:320px;line-height:1.7;" id="sadMsg"></div>
+  <div style="background:#FCEBEB;border:0.5px solid #F09595;border-radius:var(--border-radius-lg);padding:14px 20px;max-width:340px;width:100%;" id="sadUnfinished"></div>
+  <div style="font-size:13px;color:var(--color-text-secondary);max-width:300px;line-height:1.7;font-style:italic;">Every task you skip today is extra pressure tomorrow. The exams don't move — but you can.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <button onclick="dismissSad()" style="font-size:13px;padding:8px 18px;">I'll do better tomorrow</button>
+    <button onclick="doThemNow()" style="font-size:13px;padding:8px 18px;background:#EEEDFE;border-color:#AFA9EC;color:#3C3489;">Actually, I'll do them now ↗</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const EXAM_START = new Date(2026,4,17);
+const STUDY_LEAVE = new Date(2026,4,12);
+
+function getToday(){
+  return new Date();
+}
+
+function mkDate(y,m,d){return new Date(y,m-1,d);}
+function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+
+const SC={
+  cs:     {label:'CS',     dot:'#378ADD',pill:'#E6F1FB',pillText:'#185FA5'},
+  physics:{label:'Physics',dot:'#639922',pill:'#EAF3DE',pillText:'#3B6D11'},
+  math:   {label:'Math',  dot:'#BA7517',pill:'#FAEEDA',pillText:'#854F0B'},
+  econ:   {label:'Econ',  dot:'#D4537E',pill:'#FBEAF0',pillText:'#993556'},
+  english:{label:'English',dot:'#7F77DD',pill:'#EEEDFE',pillText:'#534AB7'},
+  spanish:{label:'Spanish',dot:'#1D9E75',pill:'#E1F5EE',pillText:'#0F6E56'},
+  all:    {label:'General',dot:'#888780',pill:'#F1EFE8',pillText:'#5F5E5A'},
+};
+
+const PHASES=[
+  {name:'Foundation',color:'#EEEDFE',text:'#3C3489',border:'#AFA9EC'},
+  {name:'Build',color:'#EAF3DE',text:'#27500A',border:'#97C459'},
+  {name:'Intensify',color:'#FAEEDA',text:'#633806',border:'#EF9F27'},
+  {name:'Study leave',color:'#FCEBEB',text:'#A32D2D',border:'#F09595'},
+];
+
+const allDays=[
+  {d:mkDate(2026,4,13),phase:0,tasks:[
+    {subj:'cs',text:'OOP basics: class, object, method, attribute',note:'Watch a 20min explainer first — concept before code',id:'t1'},
+    {subj:'math',text:'Algebraic fractions: simplify, add, multiply',note:'Khan Academy — do 10 practice problems',id:'t2'},
+  ]},
+  {d:mkDate(2026,4,14),phase:0,tasks:[
+    {subj:'cs',text:'OOP: write your first class — Student with name, grade, methods',note:'Type it out, don\'t copy-paste',id:'t3'},
+    {subj:'physics',text:'Mechanics: Newton\'s 3 laws + free body diagrams',note:'Draw diagrams for 5 different scenarios',id:'t4'},
+  ]},
+  {d:mkDate(2026,4,15),phase:0,tasks:[
+    {subj:'cs',text:'OOP: inheritance and constructors (__init__)',note:'Build a subclass — GradStudent extends Student',id:'t5'},
+    {subj:'math',text:'Factorization: difference of squares, common factor, trinomials',note:'15 practice problems',id:'t6'},
+  ]},
+  {d:mkDate(2026,4,16),phase:0,tasks:[
+    {subj:'cs',text:'OOP: encapsulation, getters and setters',note:'Long day — 30min CS after school',id:'t7'},
+    {subj:'physics',text:'Circuits: Ohm\'s law, series vs parallel — draw diagrams',note:'Morning block',id:'t8'},
+  ]},
+  {d:mkDate(2026,4,17),phase:0,tasks:[
+    {subj:'cs',text:'Databases: tables, primary keys, SQL SELECT basics',note:'Big free window — spend 90min here',id:'t9'},
+    {subj:'cs',text:'OOP mini-project: Library system with Book and Member classes',note:'',id:'t10'},
+  ]},
+  {d:mkDate(2026,4,18),phase:0,tasks:[
+    {subj:'math',text:'Functions: domain, range, notation f(x)',note:'',id:'t11'},
+    {subj:'physics',text:'Circuits: Kirchhoff\'s laws, calculating current & voltage',note:'Do 5 past IB circuit questions',id:'t12'},
+  ]},
+  {d:mkDate(2026,4,19),phase:0,tasks:[
+    {subj:'cs',text:'OOP review: write a class from scratch without notes',note:'Light day — 45min only',id:'t13'},
+    {subj:'spanish',text:'Vocabulary: family, daily routine, hobbies vocab lists',note:'',id:'t14'},
+  ]},
+  {d:mkDate(2026,4,20),phase:0,tasks:[
+    {subj:'cs',text:'Databases: SQL INSERT, UPDATE, DELETE, WHERE clauses',note:'Build a small student DB in Python using sqlite3',id:'t15'},
+    {subj:'math',text:'Functions: transformations — shifts, reflections, stretches',note:'Graph by hand first',id:'t16'},
+  ]},
+  {d:mkDate(2026,4,21),phase:0,tasks:[
+    {subj:'cs',text:'OOP + DB combined: store and retrieve objects from database',note:'Likely on your test',id:'t17'},
+    {subj:'physics',text:'Thermal physics: specific heat capacity, phase change',note:'Morning block',id:'t18'},
+  ]},
+  {d:mkDate(2026,4,22),phase:0,tasks:[
+    {subj:'cs',text:'CS TEST PREP: review all OOP + DB notes, do past problems',note:'Priority day — focus entirely on this',id:'t19'},
+    {subj:'econ',text:'Supply & demand diagrams: shifts, equilibrium',note:'Draw 10 different scenarios',id:'t20'},
+  ]},
+  {d:mkDate(2026,4,23),phase:0,tasks:[
+    {subj:'cs',text:'CS TEST — breathe, read carefully, show your thinking',note:'Long school day — rest well tonight',id:'t21'},
+    {subj:'english',text:'Paper 1: find 3 persuasive techniques in any article',note:'Evening — very light',id:'t22'},
+  ]},
+  {d:mkDate(2026,4,24),phase:0,tasks:[
+    {subj:'math',text:'Sequences: arithmetic — nth term, sum formula',note:'Big free window — 90min Math',id:'t23'},
+    {subj:'physics',text:'Circular motion: centripetal force, angular velocity, period',note:'',id:'t24'},
+  ]},
+  {d:mkDate(2026,4,25),phase:0,tasks:[
+    {subj:'math',text:'Sequences: geometric — sum formula, sum to infinity',note:'',id:'t25'},
+    {subj:'econ',text:'Elasticity: PED, YED, XED — definitions, formulas, diagrams',note:'Key HL topic',id:'t26'},
+  ]},
+  {d:mkDate(2026,4,26),phase:0,tasks:[
+    {subj:'physics',text:'Gravitational fields: field strength, orbital motion, Kepler\'s laws',note:'New topic — start fresh',id:'t27'},
+    {subj:'english',text:'Never Let Me Go: themes — identity, memory, power, technology',note:'Make a themes summary sheet',id:'t28'},
+  ]},
+  {d:mkDate(2026,4,27),phase:1,tasks:[
+    {subj:'cs',text:'Algorithms: bubble sort + binary search — code both from memory',note:'',id:'t29'},
+    {subj:'math',text:'Logarithms: log laws, converting log and exponential form',note:'',id:'t30'},
+  ]},
+  {d:mkDate(2026,4,28),phase:1,tasks:[
+    {subj:'physics',text:'Waves: transverse vs longitudinal, amplitude, frequency, wavelength',note:'Draw wave diagrams',id:'t31'},
+    {subj:'econ',text:'Government intervention: taxes, subsidies, price floors/ceilings',note:'Diagrams for each',id:'t32'},
+  ]},
+  {d:mkDate(2026,4,29),phase:1,tasks:[
+    {subj:'cs',text:'Recursion: base case vs recursive — write factorial and Fibonacci',note:'',id:'t33'},
+    {subj:'math',text:'Exponential functions: growth & decay, solving exponential equations',note:'',id:'t34'},
+  ]},
+  {d:mkDate(2026,4,30),phase:1,tasks:[
+    {subj:'physics',text:'Waves: wave speed formula, reflection, refraction, diffraction',note:'Morning block — long school day',id:'t35'},
+    {subj:'english',text:'Paper 1 practice: 45min timed response on an unseen text',note:'',id:'t36'},
+  ]},
+  {d:mkDate(2026,5,1),phase:1,tasks:[
+    {subj:'cs',text:'File manipulation in Python: read, write, append',note:'Big free window — 2hrs CS',id:'t37'},
+    {subj:'math',text:'Trig: sin/cos/tan ratios, unit circle, exact values',note:'',id:'t38'},
+  ]},
+  {d:mkDate(2026,5,2),phase:1,tasks:[
+    {subj:'math',text:'Trig: sine rule, cosine rule, area of triangle formula',note:'Do 8 past IB trig problems',id:'t39'},
+    {subj:'econ',text:'Econ timed essay: elasticity — explain + diagram + evaluate',note:'45min timed',id:'t40'},
+  ]},
+  {d:mkDate(2026,5,3),phase:1,tasks:[
+    {subj:'physics',text:'Optics: refraction, Snell\'s law, total internal reflection',note:'Light day — 1 topic',id:'t41'},
+    {subj:'spanish',text:'Grammar: present tense + future tense conjugation drill',note:'',id:'t42'},
+  ]},
+  {d:mkDate(2026,5,4),phase:1,tasks:[
+    {subj:'cs',text:'Boolean algebra + logic gates: AND, OR, NOT — truth tables',note:'Last semester review',id:'t43'},
+    {subj:'math',text:'Trig identities: sin²+cos²=1, double angle, trig equations',note:'',id:'t44'},
+  ]},
+  {d:mkDate(2026,5,5),phase:1,tasks:[
+    {subj:'physics',text:'Full Physics past paper — timed 2hrs, mark every mistake',note:'',id:'t45'},
+    {subj:'econ',text:'Market failure, externalities, public goods — read + diagram',note:'Morning block',id:'t46'},
+  ]},
+  {d:mkDate(2026,5,6),phase:1,tasks:[
+    {subj:'cs',text:'Binary & hexadecimal: conversions, binary arithmetic',note:'Quick review — last semester',id:'t47'},
+    {subj:'math',text:'Probability: basic rules, AND/OR, tree diagrams, conditional',note:'',id:'t48'},
+  ]},
+  {d:mkDate(2026,5,7),phase:1,tasks:[
+    {subj:'math',text:'Probability: Binomial distribution, expected value',note:'Morning block — long school day',id:'t49'},
+    {subj:'english',text:'Paper 2 prep: compare Never Let Me Go — theme essay plan',note:'Evening — 40min',id:'t50'},
+  ]},
+  {d:mkDate(2026,5,8),phase:2,tasks:[
+    {subj:'cs',text:'CS full mock: OOP + databases + algorithms — timed',note:'Big free window — 2hrs',id:'t51'},
+    {subj:'math',text:'Math full timed paper 1 — no calculator',note:'',id:'t52'},
+  ]},
+  {d:mkDate(2026,5,9),phase:2,tasks:[
+    {subj:'physics',text:'Physics: review every wrong answer from past paper',note:'',id:'t53'},
+    {subj:'econ',text:'Econ timed essay: government intervention — write + self-mark',note:'',id:'t54'},
+  ]},
+  {d:mkDate(2026,5,10),phase:2,tasks:[
+    {subj:'english',text:'English timed Paper 1 — full response, 1hr15min',note:'Get teacher feedback if possible',id:'t55'},
+    {subj:'spanish',text:'Oral practice: record yourself speaking 3min on a topic',note:'',id:'t56'},
+  ]},
+  {d:mkDate(2026,5,11),phase:2,tasks:[
+    {subj:'math',text:'Math timed paper 2 — with calculator, full IB past paper',note:'',id:'t57'},
+    {subj:'cs',text:'CS: review Boolean algebra + recursion weak spots',note:'',id:'t58'},
+  ]},
+  {d:mkDate(2026,5,12),phase:2,tasks:[
+    {subj:'physics',text:'Physics: gravitational fields + waves timed questions',note:'',id:'t59'},
+    {subj:'econ',text:'Econ: full paper practice — data response + essay',note:'',id:'t60'},
+  ]},
+  {d:mkDate(2026,5,13),phase:3,tasks:[
+    {subj:'cs',text:'Final review: OOP class diagrams, SQL queries, sorting algorithms',note:'2hrs max then rest',id:'t61'},
+    {subj:'math',text:'Formula sheet: trig identities, log laws, sequences',note:'',id:'t62'},
+  ]},
+  {d:mkDate(2026,5,14),phase:3,tasks:[
+    {subj:'physics',text:'All formulas — know every equation cold',note:'2hrs then rest',id:'t63'},
+    {subj:'econ',text:'All diagram types — draw each one from memory',note:'',id:'t64'},
+  ]},
+  {d:mkDate(2026,5,15),phase:3,tasks:[
+    {subj:'english',text:'Re-read key chapters Never Let Me Go + theme notes',note:'1.5hrs',id:'t65'},
+    {subj:'spanish',text:'Final vocab list + one oral practice session',note:'',id:'t66'},
+  ]},
+  {d:mkDate(2026,5,16),phase:3,tasks:[
+    {subj:'cs',text:'One final timed coding problem — calm and focused',note:'1hr only',id:'t67'},
+    {subj:'math',text:'Skim corrections from all past papers — patterns only',note:'1hr only',id:'t68'},
+    {subj:'physics',text:'Read through your mistake log — nothing new',note:'45min',id:'t69'},
+  ]},
+  {d:mkDate(2026,5,17),phase:3,tasks:[
+    {subj:'all',text:'Light review of shakiest subject — 1hr MAX',note:'',id:'t70'},
+    {subj:'all',text:'Prepare exam kit: pens, calculator, water, snacks',note:'',id:'t71'},
+    {subj:'all',text:'Early dinner, no screens after 9pm, sleep by 10:30pm',note:'You have done the work. Trust it.',id:'t72'},
+  ]},
+];
+
+const checked = {};
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedDate = null;
+let sadDismissed = false;
+
+function getDayData(date){return allDays.find(x=>sameDay(x.d,date));}
+function totalTasks(){return allDays.reduce((a,d)=>a+d.tasks.length,0);}
+function doneTasks(){return Object.values(checked).filter(Boolean).length;}
+function daysLeft(){return Math.max(0,Math.ceil((EXAM_START-getToday())/(1000*60*60*24)));}
+
+function pillHTML(subj){
+  const s=SC[subj]||SC.all;
+  return `<span class="subj-pill" style="background:${s.pill};color:${s.pillText}">${s.label}</span>`;
+}
+
+function taskRowHTML(task){
+  const done=checked[task.id]||false;
+  return `<div class="task-row ${done?'done':''}" onclick="toggle('${task.id}')">
+    <div class="chk ${done?'checked':''}">
+      <svg class="chk-tick" viewBox="0 0 8 8" fill="none"><polyline points="1,4 3,6 7,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="task-body">
+      <div class="task-main">${pillHTML(task.subj)}${task.text}</div>
+      ${task.note?`<div class="task-note">${task.note}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function checkSadPage(){
+  if(sadDismissed) return;
+  const now = new Date();
+  const hour = now.getHours();
+  if(hour < 22) return;
+  const today = getToday();
+  const dayData = getDayData(today);
+  if(!dayData) return;
+  const unfinished = dayData.tasks.filter(t=>!checked[t.id]);
+  if(unfinished.length === 0) return;
+  showSadPage(unfinished);
+}
+
+function showSadPage(unfinished){
+  const msgs = [
+    `You had ${unfinished.length} task${unfinished.length>1?'s':''} left today and the day is over. CS isn't going to learn itself, Ram.`,
+    `It's past 10pm and ${unfinished.length} thing${unfinished.length>1?'s were':' was'} left undone today. The exam date doesn't care.`,
+    `Day's gone. ${unfinished.length} task${unfinished.length>1?'s':''} unfinished. You know what's at stake — let's not make this a habit.`,
+  ];
+  document.getElementById('sadMsg').textContent = msgs[Math.floor(Math.random()*msgs.length)];
+  let uhtml = `<div style="font-size:11px;font-weight:500;color:#A32D2D;margin-bottom:8px;">Unfinished today:</div>`;
+  unfinished.forEach(t=>{
+    uhtml+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid #F7C1C1;">
+      <div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:4px;"></div>
+      <div style="font-size:12px;color:#791F1F;line-height:1.4;">${pillHTML(t.subj)}${t.text}</div>
+    </div>`;
+  });
+  document.getElementById('sadUnfinished').innerHTML = uhtml;
+  document.getElementById('sadPage').classList.add('show');
+}
+
+window.dismissSad = function(){
+  sadDismissed = true;
+  document.getElementById('sadPage').classList.remove('show');
+}
+
+window.doThemNow = function(){
+  sadDismissed = true;
+  document.getElementById('sadPage').classList.remove('show');
+  showView('today', document.querySelector('.nvb'));
+}
+
+function renderToday(){
+  const today = getToday();
+  const dayData = getDayData(today);
+  const done=doneTasks(), total=totalTasks();
+  const pct=total>0?Math.round((done/total)*100):0;
+  const days=daysLeft();
+
+  let html=`<div class="stats-row">
+    <div class="stat"><div class="stat-label">Days to exams</div><div class="stat-val">${days}</div><div class="stat-sub">May 17, 2026</div></div>
+    <div class="stat"><div class="stat-label">Tasks done</div><div class="stat-val">${done}</div><div class="stat-sub">of ${total} total</div></div>
+    <div class="stat"><div class="stat-label">Overall progress</div><div class="stat-val">${pct}%</div><div style="margin-top:4px;"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div></div></div>
+    <div class="stat"><div class="stat-label">Study leave</div><div class="stat-val">May 12</div><div class="stat-sub">${Math.max(0,Math.ceil((STUDY_LEAVE-today)/(1000*60*60*24)))} days away</div></div>
+  </div>`;
+
+  const WDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=`${WDAYS[today.getDay()]}, ${today.getDate()} ${MNAMES[today.getMonth()]} ${today.getFullYear()}`;
+
+  if(dayData){
+    const ph=PHASES[dayData.phase];
+    const todayDone=dayData.tasks.filter(t=>checked[t.id]).length;
+    const todayTotal=dayData.tasks.length;
+    html+=`<div class="today-card">
+      <div class="today-header">
+        <div class="today-title">${dateStr}<span class="phase-badge" style="background:${ph.color};color:${ph.text};border:0.5px solid ${ph.border}">${ph.name}</span></div>
+        <div class="today-sub">${todayDone}/${todayTotal} done today — tap to check off as you go</div>
+      </div>
+      ${dayData.tasks.map(taskRowHTML).join('')}
+    </div>`;
+  } else if(today >= EXAM_START){
+    html+=`<div class="today-card"><div style="padding:1.5rem;text-align:center;"><div style="font-size:15px;font-weight:500;color:#A32D2D;margin-bottom:6px;">Exam period</div><div style="font-size:13px;color:var(--color-text-secondary);">You've done the work. Go show them what you know.</div></div></div>`;
+  } else {
+    html+=`<div class="today-card"><div style="padding:1.5rem;text-align:center;font-size:13px;color:var(--color-text-secondary);">No tasks today — rest up, you've earned it!</div></div>`;
+  }
+
+  const now = new Date();
+  const hour = now.getHours();
+  if(hour >= 20 && dayData){
+    const unfinished = dayData.tasks.filter(t=>!checked[t.id]);
+    if(unfinished.length > 0 && !sadDismissed){
+      html+=`<div style="margin-top:8px;padding:10px 14px;border-radius:var(--border-radius-md);background:#FAEEDA;border:0.5px solid #EF9F27;font-size:12px;color:#633806;cursor:pointer;" onclick="showSadPage(getTodayUnfinished())">
+        Warning: ${unfinished.length} task${unfinished.length>1?'s':''} still unfinished — day ends at midnight
+      </div>`;
+    }
+  }
+
+  html+=`<button onclick="sendPrompt('Help me with today\\'s study topics')" style="font-size:12px;margin-top:8px;">Ask Claude about today's topics ↗</button>`;
+  document.getElementById('view-today').innerHTML=html;
+}
+
+window.getTodayUnfinished = function(){
+  const today = getToday();
+  const dayData = getDayData(today);
+  if(!dayData) return [];
+  return dayData.tasks.filter(t=>!checked[t.id]);
+}
+
+function renderCalendar(){
+  const MNAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const today = getToday();
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <button onclick="calPrev()" style="font-size:11px;padding:3px 10px;">← prev</button>
+    <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">${MNAMES[calMonth]} ${calYear}</span>
+    <button onclick="calNext()" style="font-size:11px;padding:3px 10px;">next →</button>
+  </div>`;
+
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  html+=`<div class="cal-grid">`;
+  dayNames.forEach(d=>{html+=`<div class="cal-header-cell">${d}</div>`;});
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
+
+  for(let day=1;day<=daysInMonth;day++){
+    const date=new Date(calYear,calMonth,day);
+    const dayData=getDayData(date);
+    const isToday=sameDay(date,today);
+    const isPast=date<today&&!isToday;
+    const isExam=date>=EXAM_START;
+    const isLeave=date>=STUDY_LEAVE&&date<EXAM_START;
+    const isSel=selectedDate&&sameDay(date,selectedDate);
+
+    let cls='cal-day';
+    if(isExam) cls='cal-day exam-day';
+    else if(isLeave) cls='cal-day study-leave';
+    else if(isToday) cls+=' today';
+    else if(isSel) cls+=' selected';
+    if(isPast&&!isExam&&!isLeave) cls+=' past';
+
+    let dots='';
+    if(dayData){
+      const seen={};
+      dayData.tasks.forEach(t=>{
+        if(!seen[t.subj]){seen[t.subj]=true;const c=SC[t.subj]||SC.all;dots+=`<div class="cal-dot" style="background:${c.dot}"></div>`;}
+      });
+    }
+    html+=`<div class="${cls}" onclick="selectCalDay(${calYear},${calMonth},${day})">
+      <div class="cal-num">${day}</div>
+      <div class="cal-dots">${dots}</div>
+    </div>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#EEEDFE;border:0.5px solid #7F77DD;"></div>Today</div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#FAEEDA;border:0.5px solid #EF9F27;"></div>Study leave</div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#FCEBEB;border:0.5px solid #F09595;"></div>Exams</div>
+  </div>`;
+
+  const sd=selectedDate||today;
+  const selData=getDayData(sd);
+  const WDAYS2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MNAMES2=['Jan','Feb','Mar','Apr','May'];
+  const selStr=`${WDAYS2[sd.getDay()]} ${sd.getDate()} ${MNAMES2[sd.getMonth()]||''}`;
+
+  html+=`<div class="today-card"><div class="sel-day-header" style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;font-weight:500;color:var(--color-text-primary);">${selStr}</div>`;
+  if(selData&&selData.tasks.length>0){
+    html+=selData.tasks.map(taskRowHTML).join('');
+  } else if(sd>=EXAM_START){
+    html+=`<div style="padding:1rem;font-size:12px;color:#A32D2D;">Exam period — go get them!</div>`;
+  } else {
+    html+=`<div style="padding:1rem;font-size:12px;color:var(--color-text-secondary);">Rest day — no tasks scheduled.</div>`;
+  }
+  html+=`</div>`;
+
+  document.getElementById('view-calendar').innerHTML=html;
+}
+
+window.calPrev=function(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+window.calNext=function(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+window.selectCalDay=function(y,m,d){selectedDate=new Date(y,m,d);renderCalendar();}
+
+function renderSubjects(){
+  const subjs=['cs','physics','math','econ','english','spanish'];
+  let html='';
+  subjs.forEach(s=>{
+    const c=SC[s];
+    const days=allDays.filter(d=>d.tasks.some(t=>t.subj===s));
+    const totalS=days.reduce((a,d)=>a+d.tasks.filter(t=>t.subj===s).length,0);
+    html+=`<div style="margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${c.dot};"></div>
+        <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">${c.label}</span>
+        <span style="font-size:11px;color:var(--color-text-secondary);">${totalS} tasks</span>
+      </div>
+      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;">`;
+    days.forEach(day=>{
+      const MNAMES=['Jan','Feb','Mar','Apr','May'];
+      const WNAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const dstr=`${WNAMES[day.d.getDay()]} ${day.d.getDate()} ${MNAMES[day.d.getMonth()]||''}`;
+      const ph2=PHASES[day.phase];
+      const dayTasks=day.tasks.filter(t=>t.subj===s);
+      html+=`<div style="border-bottom:0.5px solid var(--color-border-tertiary);">
+        <div style="padding:5px 12px;background:var(--color-background-secondary);font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;">
+          ${dstr}<span style="font-size:9px;padding:1px 6px;border-radius:20px;background:${ph2.color};color:${ph2.text}">${ph2.name}</span>
+        </div>
+        ${dayTasks.map(taskRowHTML).join('')}
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('view-subjects').innerHTML=html;
+}
+
+function renderProgress(){
+  const total=totalTasks(),done=doneTasks();
+  const pct=total>0?Math.round((done/total)*100):0;
+  let html=`<div style="margin-bottom:1.25rem;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Overall completion</span>
+      <span style="font-size:13px;color:var(--color-text-secondary);">${done} / ${total}</span>
+    </div>
+    <div class="progress-bar-wrap" style="height:10px;"><div class="progress-bar" style="width:${pct}%;height:10px;"></div></div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;">${pct}% complete</div>
+  </div>`;
+
+  const subjs=['cs','physics','math','econ','english','spanish'];
+  html+=`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:1rem;">`;
+  subjs.forEach(s=>{
+    const c=SC[s];
+    const subjTasks=allDays.flatMap(d=>d.tasks.filter(t=>t.subj===s));
+    const subjDone=subjTasks.filter(t=>checked[t.id]).length;
+    const subjTotal=subjTasks.length;
+    const subjPct=subjTotal>0?Math.round((subjDone/subjTotal)*100):0;
+    html+=`<div class="subj-row">
+      <div style="display:flex;align-items:center;gap:6px;width:70px;flex-shrink:0;font-size:12px;font-weight:500;color:var(--color-text-primary);">
+        <div style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0;"></div>${c.label}
+      </div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="height:8px;border-radius:4px;background:${c.dot};width:${subjPct}%;transition:width 0.3s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-secondary);width:40px;text-align:right;">${subjDone}/${subjTotal}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  const phaseList=[
+    {label:'Phase 1 — Foundation',idx:0},
+    {label:'Phase 2 — Build',idx:1},
+    {label:'Phase 3 — Intensify',idx:2},
+    {label:'Study leave',idx:3},
+  ];
+  html+=`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">`;
+  phaseList.forEach(ph=>{
+    const phColor=PHASES[ph.idx];
+    const phTasks=allDays.filter(d=>d.phase===ph.idx).flatMap(d=>d.tasks);
+    const phDone=phTasks.filter(t=>checked[t.id]).length;
+    const phTotal=phTasks.length;
+    const phPct=phTotal>0?Math.round((phDone/phTotal)*100):0;
+    html+=`<div class="subj-row">
+      <div style="font-size:11px;width:100px;flex-shrink:0;color:var(--color-text-primary);">${ph.label.split('—')[0].trim()}</div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="height:8px;border-radius:4px;background:${phColor.text};width:${phPct}%;transition:width 0.3s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-secondary);width:40px;text-align:right;">${phDone}/${phTotal}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('view-progress').innerHTML=html;
+}
+
+function updateClock(){
+  const now=new Date();
+  const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const WDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('liveTime');
+  if(el) el.textContent=`${WDAYS[now.getDay()]} ${now.getDate()} ${MNAMES[now.getMonth()]} — ${h}:${m}`;
+  const cb=document.getElementById('countdown-badge');
+  if(cb) cb.textContent=`${daysLeft()} days to exams`;
+}
+
+function renderAll(){
+  renderToday();
+  renderCalendar();
+  renderSubjects();
+  renderProgress();
+  updateClock();
+}
+
+window.showView=function(v,btn){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.nvb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('show');
+  if(btn) btn.classList.add('active');
+  else document.querySelector('.nvb').classList.add('active');
+}
+
+window.toggle=function(id){
+  checked[id]=!checked[id];
+  renderAll();
+}
+
+renderAll();
+setInterval(()=>{updateClock();checkSadPage();renderToday();},60000);
+</script>
