@@ -1,1008 +1,606 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ram's Study Dashboard — IB Finals 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-  :root {
-    --bg: #0f0f13;
-    --bg2: #16161c;
-    --bg3: #1e1e26;
-    --bg4: #26262f;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #f0f0f4;
-    --text2: #9090a0;
-    --text3: #5a5a6a;
-    --accent: #7c6ff7;
-    --accent2: #a89ff9;
-    --cs: #4da6ff;
-    --physics: #5ecb7a;
-    --math: #f5a623;
-    --econ: #f06292;
-    --english: #ce93d8;
-    --spanish: #4dd0c4;
-    --general: #90a0b0;
-    --danger: #ff6b6b;
-    --warn: #ffb347;
-    --success: #5ecb7a;
-    --rad: 10px;
-    --rad-lg: 16px;
-  }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.dash{padding:1rem 0;}
+.nav{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;}
+.nvb{padding:6px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);}
+.nvb.active{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500;}
+.view{display:none;}
+.view.show{display:block;}
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem;}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary);}
+.stat-sub{font-size:10px;color:var(--color-text-tertiary);margin-top:2px;}
+.today-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:1rem;}
+.today-header{padding:12px 16px;background:#EEEDFE;border-bottom:0.5px solid #AFA9EC;}
+.today-title{font-size:15px;font-weight:500;color:#3C3489;}
+.today-sub{font-size:11px;color:#534AB7;margin-top:2px;}
+.task-row{display:flex;align-items:flex-start;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;transition:background 0.1s;}
+.task-row:last-child{border-bottom:none;}
+.task-row:hover{background:var(--color-background-secondary);}
+.task-row.done .task-main{text-decoration:line-through;color:var(--color-text-tertiary);}
+.chk{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--color-border-secondary);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;}
+.chk.checked{border-color:#534AB7;background:#534AB7;}
+.chk-tick{width:8px;height:8px;display:none;}
+.chk.checked .chk-tick{display:block;}
+.task-body{flex:1;}
+.task-main{font-size:13px;color:var(--color-text-primary);line-height:1.4;transition:all 0.2s;}
+.task-note{font-size:11px;color:var(--color-text-secondary);margin-top:2px;}
+.subj-pill{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;margin-right:5px;vertical-align:middle;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:1rem;}
+.cal-header-cell{text-align:center;font-size:10px;color:var(--color-text-tertiary);padding:4px 0;font-weight:500;}
+.cal-day{border-radius:var(--border-radius-md);padding:5px 3px;text-align:center;cursor:pointer;border:0.5px solid transparent;min-height:48px;}
+.cal-day:hover{border-color:var(--color-border-secondary);}
+.cal-day.today{border-color:#7F77DD;background:#EEEDFE;}
+.cal-day.selected{border-color:#534AB7;background:#EEEDFE;}
+.cal-day.past{opacity:0.45;}
+.cal-day.exam-day{background:#FCEBEB;border-color:#F09595;}
+.cal-day.study-leave{background:#FAEEDA;border-color:#EF9F27;}
+.cal-day.empty{cursor:default;border:none;min-height:0;}
+.cal-num{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+.cal-dots{display:flex;justify-content:center;gap:2px;margin-top:3px;flex-wrap:wrap;}
+.cal-dot{width:5px;height:5px;border-radius:50%;}
+.progress-bar-wrap{background:var(--color-background-secondary);border-radius:var(--border-radius-md);overflow:hidden;height:6px;margin-top:4px;}
+.progress-bar{height:6px;border-radius:var(--border-radius-md);background:#7F77DD;transition:width 0.4s;}
+.subj-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.subj-row:last-child{border-bottom:none;}
+.phase-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg2); }
-  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-
-  /* ── Layout ── */
-  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    padding: 28px 0;
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-  }
-
-  .logo {
-    padding: 0 20px 24px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .logo-name { font-size: 16px; font-weight: 600; color: var(--text); }
-  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
-
-  .nav-section { padding: 0 12px; margin-bottom: 6px; }
-  .nav-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 8px; margin-bottom: 4px; }
-  .nav-btn {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px; border-radius: var(--rad);
-    cursor: pointer; border: none; background: transparent;
-    color: var(--text2); font-size: 13px; font-family: 'DM Sans', sans-serif;
-    width: 100%; text-align: left; transition: all 0.15s;
-  }
-  .nav-btn:hover { background: var(--bg3); color: var(--text); }
-  .nav-btn.active { background: rgba(124,111,247,0.15); color: var(--accent2); }
-  .nav-btn .icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
-  .nav-btn.active .icon { opacity: 1; }
-
-  .sidebar-footer {
-    margin-top: auto;
-    padding: 16px 20px 0;
-    border-top: 1px solid var(--border);
-  }
-  .countdown-big {
-    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.05));
-    border: 1px solid rgba(255,107,107,0.25);
-    border-radius: var(--rad);
-    padding: 12px 14px;
-    text-align: center;
-  }
-  .countdown-num { font-size: 32px; font-weight: 600; color: var(--danger); font-family: 'DM Mono', monospace; }
-  .countdown-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
-
-  /* ── Main ── */
-  .main { padding: 32px; overflow-y: auto; }
-
-  .page-header {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
-  }
-  .page-title { font-size: 22px; font-weight: 600; color: var(--text); }
-  .page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
-
-  .phase-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;
-  }
-
-  /* ── Views ── */
-  .view { display: none; }
-  .view.active { display: block; }
-
-  /* ── Stats row ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--rad-lg); padding: 16px 18px;
-  }
-  .stat-card-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-  .stat-card-val { font-size: 28px; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; }
-  .stat-card-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
-
-  /* ── Today card ── */
-  .today-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--rad-lg); overflow: hidden; margin-bottom: 16px;
-  }
-  .today-head {
-    padding: 14px 18px;
-    background: rgba(124,111,247,0.1);
-    border-bottom: 1px solid rgba(124,111,247,0.2);
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  }
-  .today-date { font-size: 15px; font-weight: 600; color: var(--accent2); }
-  .today-count { font-size: 11px; color: var(--text2); }
-
-  .task-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 12px 18px; border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.1s;
-  }
-  .task-item:last-child { border-bottom: none; }
-  .task-item:hover { background: var(--bg3); }
-  .task-item.done { opacity: 0.4; }
-  .task-item.done .task-text { text-decoration: line-through; }
-
-  .checkbox {
-    width: 18px; height: 18px; border-radius: 5px;
-    border: 1.5px solid var(--border2); flex-shrink: 0;
-    margin-top: 1px; display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .checkbox.checked { background: var(--accent); border-color: var(--accent); }
-  .checkbox svg { display: none; }
-  .checkbox.checked svg { display: block; }
-
-  .task-body { flex: 1; min-width: 0; }
-  .task-text { font-size: 13px; color: var(--text); line-height: 1.45; }
-  .task-hint { font-size: 11px; color: var(--text3); margin-top: 3px; font-style: italic; }
-
-  .subj-tag {
-    display: inline-block; font-size: 10px; font-weight: 500;
-    padding: 2px 8px; border-radius: 20px; margin-right: 6px;
-    font-family: 'DM Mono', monospace; vertical-align: middle;
-  }
-
-  /* ── Calendar ── */
-  .cal-container { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
-  .cal-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad-lg); padding: 20px; }
-  .cal-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .cal-month-label { font-size: 15px; font-weight: 600; color: var(--text); }
-  .cal-nav-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: var(--rad); font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-  .cal-nav-btn:hover { background: var(--bg4); color: var(--text); }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .cal-day-header { text-align: center; font-size: 10px; color: var(--text3); padding: 6px 0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-  .cal-cell {
-    border-radius: 8px; padding: 6px 4px; text-align: center;
-    cursor: pointer; border: 1px solid transparent; min-height: 52px;
-    transition: all 0.12s; position: relative;
-  }
-  .cal-cell:hover:not(.empty) { border-color: var(--border2); background: var(--bg3); }
-  .cal-cell.today { border-color: var(--accent); background: rgba(124,111,247,0.1); }
-  .cal-cell.selected { border-color: var(--accent2); background: rgba(124,111,247,0.15); }
-  .cal-cell.past { opacity: 0.35; }
-  .cal-cell.study-leave { background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.2); }
-  .cal-cell.exam-day { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.2); }
-  .cal-cell.empty { cursor: default; }
-  .cal-num { font-size: 12px; font-weight: 500; color: var(--text); }
-  .cal-dots { display: flex; justify-content: center; gap: 2px; margin-top: 4px; flex-wrap: wrap; }
-  .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
-  .cal-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
-  .cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-  .cal-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
-
-  .day-detail {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--rad-lg); overflow: hidden; height: fit-content;
-  }
-  .day-detail-head {
-    padding: 14px 16px; background: var(--bg3);
-    border-bottom: 1px solid var(--border);
-  }
-  .day-detail-date { font-size: 14px; font-weight: 600; color: var(--text); }
-  .day-detail-phase { font-size: 10px; color: var(--text3); margin-top: 2px; }
-
-  /* ── Subject view ── */
-  .subj-section { margin-bottom: 20px; }
-  .subj-header {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-    padding: 12px 16px;
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--rad) var(--rad) 0 0;
-    cursor: pointer; user-select: none;
-  }
-  .subj-header-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .subj-header-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
-  .subj-header-count { font-size: 11px; color: var(--text2); }
-  .subj-header-arrow { font-size: 11px; color: var(--text3); transition: transform 0.2s; }
-  .subj-header.collapsed .subj-header-arrow { transform: rotate(-90deg); }
-  .subj-body {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-top: none; border-radius: 0 0 var(--rad) var(--rad);
-    overflow: hidden;
-  }
-  .subj-body.hidden { display: none; }
-  .subj-day-label {
-    padding: 6px 16px; font-size: 10px; color: var(--text3);
-    background: var(--bg3); border-bottom: 1px solid var(--border);
-    text-transform: uppercase; letter-spacing: 0.05em;
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  /* ── Progress ── */
-  .prog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .prog-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad-lg); padding: 20px; }
-  .prog-card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
-  .prog-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-  .prog-label { font-size: 12px; color: var(--text2); width: 80px; flex-shrink: 0; }
-  .prog-bar-track { flex: 1; background: var(--bg4); border-radius: 4px; height: 7px; overflow: hidden; }
-  .prog-bar-fill { height: 7px; border-radius: 4px; transition: width 0.4s ease; }
-  .prog-pct { font-size: 11px; color: var(--text3); width: 32px; text-align: right; font-family: 'DM Mono', monospace; }
-  .overall-ring { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 0 20px; }
-  .ring-num { font-size: 48px; font-weight: 600; color: var(--accent2); font-family: 'DM Mono', monospace; line-height: 1; }
-  .ring-label { font-size: 12px; color: var(--text2); margin-top: 6px; }
-  .ring-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-
-  /* ── Filter chips ── */
-  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-  .chip {
-    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 500;
-    cursor: pointer; border: 1px solid var(--border2);
-    background: transparent; color: var(--text2); transition: all 0.15s;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .chip:hover { background: var(--bg3); color: var(--text); }
-  .chip.active { color: #fff; border-color: transparent; }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: var(--rad); padding: 10px 16px;
-    font-size: 12px; color: var(--text);
-    opacity: 0; transform: translateY(8px);
-    transition: all 0.2s; pointer-events: none; z-index: 999;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-
-  /* ── Responsive ── */
-  @media (max-width: 900px) {
-    .shell { grid-template-columns: 1fr; }
-    .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 16px; gap: 8px; }
-    .logo { padding: 0; border: none; margin: 0; flex-basis: 100%; }
-    .nav-section { padding: 0; }
-    .nav-label { display: none; }
-    .nav-btn { padding: 7px 12px; }
-    .sidebar-footer { display: none; }
-    .main { padding: 16px; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .cal-container { grid-template-columns: 1fr; }
-    .prog-grid { grid-template-columns: 1fr; }
-  }
+.sad-overlay{display:none;position:absolute;top:0;left:0;width:100%;min-height:100%;background:var(--color-background-primary);z-index:100;padding:2rem 1rem;text-align:center;}
+.sad-overlay.show{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+.sad-face{width:80px;height:80px;position:relative;margin:0 auto;}
 </style>
-</head>
-<body>
 
-<div class="shell">
+<div style="position:relative;" id="appRoot">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-name">Ram Mostafa Ali</div>
-      <div class="logo-sub">IB DP1 · EMIS · Finals 2026</div>
-    </div>
+<div class="dash" id="mainDash">
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;">Ram's finals study dashboard</h2>
 
-    <div class="nav-section">
-      <div class="nav-label">Views</div>
-      <button class="nav-btn active" onclick="showView('today', this)">
-        <svg class="icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="currentColor"/><rect x="9" y="2" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="2" y="9" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
-        Today
-      </button>
-      <button class="nav-btn" onclick="showView('calendar', this)">
-        <svg class="icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v4M11 1v4M1 7h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Calendar
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this)">
-        <svg class="icon" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        By subject
-      </button>
-      <button class="nav-btn" onclick="showView('progress', this)">
-        <svg class="icon" viewBox="0 0 16 16" fill="none"><path d="M2 12 L5 8 L8 10 L11 5 L14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Progress
-      </button>
-    </div>
-
-    <div class="nav-section" style="margin-top:12px;">
-      <div class="nav-label">Subjects</div>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('cs')" style="color:var(--cs)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--cs);flex-shrink:0;"></div> CS
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('physics')" style="color:var(--physics)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--physics);flex-shrink:0;"></div> Physics
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('math')" style="color:var(--math)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--math);flex-shrink:0;"></div> Math
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('econ')" style="color:var(--econ)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--econ);flex-shrink:0;"></div> Econ
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('english')" style="color:var(--english)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--english);flex-shrink:0;"></div> English
-      </button>
-      <button class="nav-btn" onclick="showView('subjects', this); filterSubject('spanish')" style="color:var(--spanish)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--spanish);flex-shrink:0;"></div> Spanish
-      </button>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="countdown-big">
-        <div class="countdown-num" id="sb-countdown">35</div>
-        <div class="countdown-label">days to exams</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="main">
-
-    <!-- Today view -->
-    <div id="view-today" class="view active">
-      <div class="page-header">
-        <div>
-          <div class="page-title" id="today-title">Today</div>
-          <div class="page-sub">Tap tasks to check them off as you finish</div>
-        </div>
-        <div id="today-phase-badge"></div>
-      </div>
-      <div class="stats-grid" id="stats-grid"></div>
-      <div id="today-tasks"></div>
-    </div>
-
-    <!-- Calendar view -->
-    <div id="view-calendar" class="view">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Calendar</div>
-          <div class="page-sub">Click any day to see its tasks</div>
-        </div>
-      </div>
-      <div class="cal-container">
-        <div>
-          <div class="cal-wrap">
-            <div class="cal-nav-row">
-              <button class="cal-nav-btn" onclick="calPrev()">← prev</button>
-              <span class="cal-month-label" id="cal-month-label"></span>
-              <button class="cal-nav-btn" onclick="calNext()">next →</button>
-            </div>
-            <div class="cal-grid" id="cal-grid"></div>
-            <div class="cal-legend">
-              <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(124,111,247,0.3);border:1px solid var(--accent)"></div>Today</div>
-              <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(245,166,35,0.2)"></div>Study leave</div>
-              <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(255,107,107,0.2)"></div>Exams</div>
-            </div>
-          </div>
-        </div>
-        <div class="day-detail" id="day-detail"></div>
-      </div>
-    </div>
-
-    <!-- Subjects view -->
-    <div id="view-subjects" class="view">
-      <div class="page-header">
-        <div>
-          <div class="page-title">By subject</div>
-          <div class="page-sub">All tasks grouped by subject</div>
-        </div>
-      </div>
-      <div class="filter-row" id="subj-filter-row"></div>
-      <div id="subjects-content"></div>
-    </div>
-
-    <!-- Progress view -->
-    <div id="view-progress" class="view">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Progress</div>
-          <div class="page-sub">Track how far you've come</div>
-        </div>
-      </div>
-      <div class="prog-grid" id="prog-grid"></div>
-    </div>
-
-  </main>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+  <div>
+    <div style="font-size:18px;font-weight:500;color:var(--color-text-primary);">Ram's study dashboard</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);" id="liveTime"></div>
+  </div>
+  <div id="countdown-badge" style="padding:6px 14px;border-radius:var(--border-radius-md);background:#FCEBEB;border:0.5px solid #F09595;font-size:12px;font-weight:500;color:#A32D2D;"></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="nav">
+  <button class="nvb active" onclick="showView('today',this)">Today</button>
+  <button class="nvb" onclick="showView('calendar',this)">Calendar</button>
+  <button class="nvb" onclick="showView('subjects',this)">By subject</button>
+  <button class="nvb" onclick="showView('progress',this)">Progress</button>
+</div>
+
+<div id="view-today" class="view show"></div>
+<div id="view-calendar" class="view"></div>
+<div id="view-subjects" class="view"></div>
+<div id="view-progress" class="view"></div>
+</div>
+
+<div class="sad-overlay" id="sadPage">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="42" fill="#FCEBEB" stroke="#F09595" stroke-width="1"/>
+    <circle cx="32" cy="36" r="4" fill="#A32D2D"/>
+    <circle cx="58" cy="36" r="4" fill="#A32D2D"/>
+    <path d="M28 62 Q45 50 62 62" stroke="#A32D2D" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M26 28 L32 33" stroke="#A32D2D" stroke-width="2" stroke-linecap="round"/>
+    <path d="M64 28 L58 33" stroke="#A32D2D" stroke-width="2" stroke-linecap="round"/>
+    <path d="M38 20 Q40 16 42 20" stroke="#A32D2D" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M48 20 Q50 16 52 20" stroke="#A32D2D" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div style="font-size:22px;font-weight:500;color:var(--color-text-primary);">Day's over, Ram.</div>
+  <div style="font-size:14px;color:var(--color-text-secondary);max-width:320px;line-height:1.7;" id="sadMsg"></div>
+  <div style="background:#FCEBEB;border:0.5px solid #F09595;border-radius:var(--border-radius-lg);padding:14px 20px;max-width:340px;width:100%;" id="sadUnfinished"></div>
+  <div style="font-size:13px;color:var(--color-text-secondary);max-width:300px;line-height:1.7;font-style:italic;">Every task you skip today is extra pressure tomorrow. The exams don't move — but you can.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <button onclick="dismissSad()" style="font-size:13px;padding:8px 18px;">I'll do better tomorrow</button>
+    <button onclick="doThemNow()" style="font-size:13px;padding:8px 18px;background:#EEEDFE;border-color:#AFA9EC;color:#3C3489;">Actually, I'll do them now ↗</button>
+  </div>
+</div>
+
+</div>
 
 <script>
-// ─── DATA ───────────────────────────────────────────────────────────────────
+const EXAM_START = new Date(2026,4,17);
+const STUDY_LEAVE = new Date(2026,4,12);
 
-const TODAY = new Date(2026, 3, 12);
-const EXAM_START = new Date(2026, 4, 17);
-const STUDY_LEAVE_START = new Date(2026, 4, 12);
+function getToday(){
+  return new Date();
+}
 
-const SC = {
-  cs:      { label: 'CS',      color: '#4da6ff', bg: 'rgba(77,166,255,0.12)', text: '#4da6ff' },
-  physics: { label: 'Physics', color: '#5ecb7a', bg: 'rgba(94,203,122,0.12)', text: '#5ecb7a' },
-  math:    { label: 'Math',    color: '#f5a623', bg: 'rgba(245,166,35,0.12)', text: '#f5a623' },
-  econ:    { label: 'Econ',    color: '#f06292', bg: 'rgba(240,98,146,0.12)', text: '#f06292' },
-  english: { label: 'English', color: '#ce93d8', bg: 'rgba(206,147,216,0.12)', text: '#ce93d8' },
-  spanish: { label: 'Spanish', color: '#4dd0c4', bg: 'rgba(77,208,196,0.12)', text: '#4dd0c4' },
-  all:     { label: 'General', color: '#90a0b0', bg: 'rgba(144,160,176,0.12)', text: '#90a0b0' },
+function mkDate(y,m,d){return new Date(y,m-1,d);}
+function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+
+const SC={
+  cs:     {label:'CS',     dot:'#378ADD',pill:'#E6F1FB',pillText:'#185FA5'},
+  physics:{label:'Physics',dot:'#639922',pill:'#EAF3DE',pillText:'#3B6D11'},
+  math:   {label:'Math',  dot:'#BA7517',pill:'#FAEEDA',pillText:'#854F0B'},
+  econ:   {label:'Econ',  dot:'#D4537E',pill:'#FBEAF0',pillText:'#993556'},
+  english:{label:'English',dot:'#7F77DD',pill:'#EEEDFE',pillText:'#534AB7'},
+  spanish:{label:'Spanish',dot:'#1D9E75',pill:'#E1F5EE',pillText:'#0F6E56'},
+  all:    {label:'General',dot:'#888780',pill:'#F1EFE8',pillText:'#5F5E5A'},
 };
 
-const PHASES = [
-  { name: 'Foundation', color: 'rgba(124,111,247,0.15)', text: '#a89ff9', border: 'rgba(124,111,247,0.3)' },
-  { name: 'Build',      color: 'rgba(94,203,122,0.12)',  text: '#5ecb7a', border: 'rgba(94,203,122,0.25)' },
-  { name: 'Intensify',  color: 'rgba(245,166,35,0.12)',  text: '#f5a623', border: 'rgba(245,166,35,0.25)' },
-  { name: 'Study leave',color: 'rgba(255,107,107,0.12)', text: '#ff8a8a', border: 'rgba(255,107,107,0.25)' },
+const PHASES=[
+  {name:'Foundation',color:'#EEEDFE',text:'#3C3489',border:'#AFA9EC'},
+  {name:'Build',color:'#EAF3DE',text:'#27500A',border:'#97C459'},
+  {name:'Intensify',color:'#FAEEDA',text:'#633806',border:'#EF9F27'},
+  {name:'Study leave',color:'#FCEBEB',text:'#A32D2D',border:'#F09595'},
 ];
 
-function mkD(y, m, d) { return new Date(y, m - 1, d); }
-function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-const DAYS_DATA = [
-  { d: mkD(2026,4,12), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP basics: class, object, method, attribute', note:'Watch a 20min explainer — concept before code', id:'t001' },
-    { subj:'math',    text:'Algebraic fractions: simplify, add, multiply', note:'Khan Academy — 10 practice problems', id:'t002' },
+const allDays=[
+  {d:mkDate(2026,4,13),phase:0,tasks:[
+    {subj:'cs',text:'OOP basics: class, object, method, attribute',note:'Watch a 20min explainer first — concept before code',id:'t1'},
+    {subj:'math',text:'Algebraic fractions: simplify, add, multiply',note:'Khan Academy — do 10 practice problems',id:'t2'},
   ]},
-  { d: mkD(2026,4,13), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP: write your first class — Student with name, grade, methods', note:"Type it out, don't copy-paste", id:'t003' },
-    { subj:'physics', text:"Mechanics: Newton's 3 laws + free body diagrams", note:'Draw diagrams for 5 different scenarios', id:'t004' },
+  {d:mkDate(2026,4,14),phase:0,tasks:[
+    {subj:'cs',text:'OOP: write your first class — Student with name, grade, methods',note:'Type it out, don\'t copy-paste',id:'t3'},
+    {subj:'physics',text:'Mechanics: Newton\'s 3 laws + free body diagrams',note:'Draw diagrams for 5 different scenarios',id:'t4'},
   ]},
-  { d: mkD(2026,4,14), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP: inheritance and constructors (__init__)', note:'Build a subclass — GradStudent extends Student', id:'t005' },
-    { subj:'math',    text:'Factorization: difference of squares, common factor, trinomials', note:'15 practice problems', id:'t006' },
+  {d:mkDate(2026,4,15),phase:0,tasks:[
+    {subj:'cs',text:'OOP: inheritance and constructors (__init__)',note:'Build a subclass — GradStudent extends Student',id:'t5'},
+    {subj:'math',text:'Factorization: difference of squares, common factor, trinomials',note:'15 practice problems',id:'t6'},
   ]},
-  { d: mkD(2026,4,15), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP: encapsulation, getters and setters', note:'Long day — just 30min CS after school', id:'t007' },
-    { subj:'physics', text:"Circuits: Ohm's law, series vs parallel", note:'Morning block — draw circuit diagrams', id:'t008' },
+  {d:mkDate(2026,4,16),phase:0,tasks:[
+    {subj:'cs',text:'OOP: encapsulation, getters and setters',note:'Long day — 30min CS after school',id:'t7'},
+    {subj:'physics',text:'Circuits: Ohm\'s law, series vs parallel — draw diagrams',note:'Morning block',id:'t8'},
   ]},
-  { d: mkD(2026,4,16), phase: 0, tasks: [
-    { subj:'cs',      text:'Databases: tables, primary keys, SQL SELECT basics', note:'Big free window — spend 90min here', id:'t009' },
-    { subj:'cs',      text:'OOP mini-project: Library system with Book and Member classes', note:'', id:'t010' },
+  {d:mkDate(2026,4,17),phase:0,tasks:[
+    {subj:'cs',text:'Databases: tables, primary keys, SQL SELECT basics',note:'Big free window — spend 90min here',id:'t9'},
+    {subj:'cs',text:'OOP mini-project: Library system with Book and Member classes',note:'',id:'t10'},
   ]},
-  { d: mkD(2026,4,17), phase: 0, tasks: [
-    { subj:'math',    text:'Functions: domain, range, notation f(x)', note:'', id:'t011' },
-    { subj:'physics', text:"Circuits: Kirchhoff's laws, calculating current and voltage", note:'Do 5 past IB circuit questions', id:'t012' },
+  {d:mkDate(2026,4,18),phase:0,tasks:[
+    {subj:'math',text:'Functions: domain, range, notation f(x)',note:'',id:'t11'},
+    {subj:'physics',text:'Circuits: Kirchhoff\'s laws, calculating current & voltage',note:'Do 5 past IB circuit questions',id:'t12'},
   ]},
-  { d: mkD(2026,4,18), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP review: write a class from scratch without notes', note:'Light day — 45min only', id:'t013' },
-    { subj:'spanish', text:'Vocabulary: family, daily routine, hobbies vocab lists', note:'', id:'t014' },
+  {d:mkDate(2026,4,19),phase:0,tasks:[
+    {subj:'cs',text:'OOP review: write a class from scratch without notes',note:'Light day — 45min only',id:'t13'},
+    {subj:'spanish',text:'Vocabulary: family, daily routine, hobbies vocab lists',note:'',id:'t14'},
   ]},
-  { d: mkD(2026,4,19), phase: 0, tasks: [
-    { subj:'cs',      text:'Databases: SQL INSERT, UPDATE, DELETE, WHERE clauses', note:'Build a small student DB in Python using sqlite3', id:'t015' },
-    { subj:'math',    text:'Functions: transformations — shifts, reflections, stretches', note:'Graph them by hand first', id:'t016' },
+  {d:mkDate(2026,4,20),phase:0,tasks:[
+    {subj:'cs',text:'Databases: SQL INSERT, UPDATE, DELETE, WHERE clauses',note:'Build a small student DB in Python using sqlite3',id:'t15'},
+    {subj:'math',text:'Functions: transformations — shifts, reflections, stretches',note:'Graph by hand first',id:'t16'},
   ]},
-  { d: mkD(2026,4,20), phase: 0, tasks: [
-    { subj:'cs',      text:'OOP + DB combined: store and retrieve objects from database', note:'This is likely on your test', id:'t017' },
-    { subj:'physics', text:'Thermal physics: specific heat capacity, phase change', note:'Morning block', id:'t018' },
+  {d:mkDate(2026,4,21),phase:0,tasks:[
+    {subj:'cs',text:'OOP + DB combined: store and retrieve objects from database',note:'Likely on your test',id:'t17'},
+    {subj:'physics',text:'Thermal physics: specific heat capacity, phase change',note:'Morning block',id:'t18'},
   ]},
-  { d: mkD(2026,4,21), phase: 0, tasks: [
-    { subj:'cs',      text:'CS TEST PREP: review all OOP + DB notes, do past problems', note:'Priority day — focus entirely on this', id:'t019' },
-    { subj:'econ',    text:'Supply and demand diagrams: shifts, equilibrium', note:'Draw 10 different scenarios', id:'t020' },
+  {d:mkDate(2026,4,22),phase:0,tasks:[
+    {subj:'cs',text:'CS TEST PREP: review all OOP + DB notes, do past problems',note:'Priority day — focus entirely on this',id:'t19'},
+    {subj:'econ',text:'Supply & demand diagrams: shifts, equilibrium',note:'Draw 10 different scenarios',id:'t20'},
   ]},
-  { d: mkD(2026,4,22), phase: 0, tasks: [
-    { subj:'cs',      text:'CS TEST — breathe, read carefully, show your thinking', note:'Long school day — rest well tonight', id:'t021' },
-    { subj:'english', text:'Paper 1 technique: find 3 persuasive techniques in any article', note:'Evening — very light', id:'t022' },
+  {d:mkDate(2026,4,23),phase:0,tasks:[
+    {subj:'cs',text:'CS TEST — breathe, read carefully, show your thinking',note:'Long school day — rest well tonight',id:'t21'},
+    {subj:'english',text:'Paper 1: find 3 persuasive techniques in any article',note:'Evening — very light',id:'t22'},
   ]},
-  { d: mkD(2026,4,23), phase: 0, tasks: [
-    { subj:'math',    text:'Sequences: arithmetic — nth term, sum formula', note:'Big free window — 90min Math', id:'t023' },
-    { subj:'physics', text:'Circular motion: centripetal force, angular velocity, period', note:'', id:'t024' },
+  {d:mkDate(2026,4,24),phase:0,tasks:[
+    {subj:'math',text:'Sequences: arithmetic — nth term, sum formula',note:'Big free window — 90min Math',id:'t23'},
+    {subj:'physics',text:'Circular motion: centripetal force, angular velocity, period',note:'',id:'t24'},
   ]},
-  { d: mkD(2026,4,24), phase: 0, tasks: [
-    { subj:'math',    text:'Sequences: geometric — sum formula, sum to infinity', note:'', id:'t025' },
-    { subj:'econ',    text:'Elasticity: PED, YED, XED — definitions, formulas, diagrams', note:'Key HL topic', id:'t026' },
+  {d:mkDate(2026,4,25),phase:0,tasks:[
+    {subj:'math',text:'Sequences: geometric — sum formula, sum to infinity',note:'',id:'t25'},
+    {subj:'econ',text:'Elasticity: PED, YED, XED — definitions, formulas, diagrams',note:'Key HL topic',id:'t26'},
   ]},
-  { d: mkD(2026,4,25), phase: 0, tasks: [
-    { subj:'physics', text:"Gravitational fields: field strength, orbital motion, Kepler's laws", note:'New topic — start fresh', id:'t027' },
-    { subj:'english', text:'Never Let Me Go: themes — identity, memory, power, technology', note:'Make a themes summary sheet', id:'t028' },
+  {d:mkDate(2026,4,26),phase:0,tasks:[
+    {subj:'physics',text:'Gravitational fields: field strength, orbital motion, Kepler\'s laws',note:'New topic — start fresh',id:'t27'},
+    {subj:'english',text:'Never Let Me Go: themes — identity, memory, power, technology',note:'Make a themes summary sheet',id:'t28'},
   ]},
-  { d: mkD(2026,4,26), phase: 1, tasks: [
-    { subj:'cs',      text:'Algorithms: bubble sort + binary search — code both from memory', note:'', id:'t029' },
-    { subj:'math',    text:'Logarithms: log laws, converting log and exponential form', note:'', id:'t030' },
+  {d:mkDate(2026,4,27),phase:1,tasks:[
+    {subj:'cs',text:'Algorithms: bubble sort + binary search — code both from memory',note:'',id:'t29'},
+    {subj:'math',text:'Logarithms: log laws, converting log and exponential form',note:'',id:'t30'},
   ]},
-  { d: mkD(2026,4,27), phase: 1, tasks: [
-    { subj:'physics', text:'Waves: transverse vs longitudinal, amplitude, frequency, wavelength', note:'Draw wave diagrams', id:'t031' },
-    { subj:'econ',    text:'Government intervention: taxes, subsidies, price floors and ceilings', note:'Morning block — diagrams for each', id:'t032' },
+  {d:mkDate(2026,4,28),phase:1,tasks:[
+    {subj:'physics',text:'Waves: transverse vs longitudinal, amplitude, frequency, wavelength',note:'Draw wave diagrams',id:'t31'},
+    {subj:'econ',text:'Government intervention: taxes, subsidies, price floors/ceilings',note:'Diagrams for each',id:'t32'},
   ]},
-  { d: mkD(2026,4,28), phase: 1, tasks: [
-    { subj:'cs',      text:'Recursion: base case vs recursive — write factorial and Fibonacci', note:'', id:'t033' },
-    { subj:'math',    text:'Exponential functions: growth and decay, solving exponential equations', note:'', id:'t034' },
+  {d:mkDate(2026,4,29),phase:1,tasks:[
+    {subj:'cs',text:'Recursion: base case vs recursive — write factorial and Fibonacci',note:'',id:'t33'},
+    {subj:'math',text:'Exponential functions: growth & decay, solving exponential equations',note:'',id:'t34'},
   ]},
-  { d: mkD(2026,4,29), phase: 1, tasks: [
-    { subj:'physics', text:'Waves: wave speed formula, reflection, refraction, diffraction', note:'Morning block — long school day', id:'t035' },
-    { subj:'english', text:'Paper 1 practice: 45min timed response on an unseen text', note:'', id:'t036' },
+  {d:mkDate(2026,4,30),phase:1,tasks:[
+    {subj:'physics',text:'Waves: wave speed formula, reflection, refraction, diffraction',note:'Morning block — long school day',id:'t35'},
+    {subj:'english',text:'Paper 1 practice: 45min timed response on an unseen text',note:'',id:'t36'},
   ]},
-  { d: mkD(2026,4,30), phase: 1, tasks: [
-    { subj:'cs',      text:'File manipulation in Python: read, write, append', note:'Big free window — 2hrs CS', id:'t037' },
-    { subj:'math',    text:'Trig: sin/cos/tan ratios, unit circle, exact values', note:'', id:'t038' },
+  {d:mkDate(2026,5,1),phase:1,tasks:[
+    {subj:'cs',text:'File manipulation in Python: read, write, append',note:'Big free window — 2hrs CS',id:'t37'},
+    {subj:'math',text:'Trig: sin/cos/tan ratios, unit circle, exact values',note:'',id:'t38'},
   ]},
-  { d: mkD(2026,5,1), phase: 1, tasks: [
-    { subj:'math',    text:'Trig: sine rule, cosine rule, area of triangle formula', note:'Do 8 past IB trig problems', id:'t039' },
-    { subj:'econ',    text:'Econ essay timed: elasticity — explain + diagram + evaluate (45min)', note:'', id:'t040' },
+  {d:mkDate(2026,5,2),phase:1,tasks:[
+    {subj:'math',text:'Trig: sine rule, cosine rule, area of triangle formula',note:'Do 8 past IB trig problems',id:'t39'},
+    {subj:'econ',text:'Econ timed essay: elasticity — explain + diagram + evaluate',note:'45min timed',id:'t40'},
   ]},
-  { d: mkD(2026,5,2), phase: 1, tasks: [
-    { subj:'physics', text:"Optics: refraction, Snell's law, total internal reflection", note:'Light day — 1 topic', id:'t041' },
-    { subj:'spanish', text:'Grammar: present tense + future tense conjugation drill', note:'', id:'t042' },
+  {d:mkDate(2026,5,3),phase:1,tasks:[
+    {subj:'physics',text:'Optics: refraction, Snell\'s law, total internal reflection',note:'Light day — 1 topic',id:'t41'},
+    {subj:'spanish',text:'Grammar: present tense + future tense conjugation drill',note:'',id:'t42'},
   ]},
-  { d: mkD(2026,5,3), phase: 1, tasks: [
-    { subj:'cs',      text:'Boolean algebra + logic gates: AND, OR, NOT — truth tables', note:'Last semester review', id:'t043' },
-    { subj:'math',    text:'Trig identities: sin²+cos²=1, double angle, trig equations', note:'', id:'t044' },
+  {d:mkDate(2026,5,4),phase:1,tasks:[
+    {subj:'cs',text:'Boolean algebra + logic gates: AND, OR, NOT — truth tables',note:'Last semester review',id:'t43'},
+    {subj:'math',text:'Trig identities: sin²+cos²=1, double angle, trig equations',note:'',id:'t44'},
   ]},
-  { d: mkD(2026,5,4), phase: 1, tasks: [
-    { subj:'physics', text:'Full Physics past paper — timed 2hrs, mark every mistake', note:'', id:'t045' },
-    { subj:'econ',    text:'Market failure, externalities, public goods — read + diagram', note:'Morning block', id:'t046' },
+  {d:mkDate(2026,5,5),phase:1,tasks:[
+    {subj:'physics',text:'Full Physics past paper — timed 2hrs, mark every mistake',note:'',id:'t45'},
+    {subj:'econ',text:'Market failure, externalities, public goods — read + diagram',note:'Morning block',id:'t46'},
   ]},
-  { d: mkD(2026,5,5), phase: 1, tasks: [
-    { subj:'cs',      text:'Binary and hexadecimal: conversions, binary arithmetic', note:'Quick review — last semester', id:'t047' },
-    { subj:'math',    text:'Probability: basic rules, AND/OR, tree diagrams, conditional', note:'', id:'t048' },
+  {d:mkDate(2026,5,6),phase:1,tasks:[
+    {subj:'cs',text:'Binary & hexadecimal: conversions, binary arithmetic',note:'Quick review — last semester',id:'t47'},
+    {subj:'math',text:'Probability: basic rules, AND/OR, tree diagrams, conditional',note:'',id:'t48'},
   ]},
-  { d: mkD(2026,5,6), phase: 1, tasks: [
-    { subj:'math',    text:'Probability: Binomial distribution, expected value', note:'Morning block — long school day', id:'t049' },
-    { subj:'english', text:'Paper 2 prep: compare Never Let Me Go — theme essay plan', note:'Evening — 40min', id:'t050' },
+  {d:mkDate(2026,5,7),phase:1,tasks:[
+    {subj:'math',text:'Probability: Binomial distribution, expected value',note:'Morning block — long school day',id:'t49'},
+    {subj:'english',text:'Paper 2 prep: compare Never Let Me Go — theme essay plan',note:'Evening — 40min',id:'t50'},
   ]},
-  { d: mkD(2026,5,7), phase: 2, tasks: [
-    { subj:'cs',      text:'CS full mock: OOP + databases + algorithms — timed', note:'Big free window — 2hrs', id:'t051' },
-    { subj:'math',    text:'Math full timed paper 1 — no calculator', note:'', id:'t052' },
+  {d:mkDate(2026,5,8),phase:2,tasks:[
+    {subj:'cs',text:'CS full mock: OOP + databases + algorithms — timed',note:'Big free window — 2hrs',id:'t51'},
+    {subj:'math',text:'Math full timed paper 1 — no calculator',note:'',id:'t52'},
   ]},
-  { d: mkD(2026,5,8), phase: 2, tasks: [
-    { subj:'physics', text:'Physics: review every wrong answer from past paper', note:'', id:'t053' },
-    { subj:'econ',    text:'Econ timed essay: government intervention — write + self-mark', note:'', id:'t054' },
+  {d:mkDate(2026,5,9),phase:2,tasks:[
+    {subj:'physics',text:'Physics: review every wrong answer from past paper',note:'',id:'t53'},
+    {subj:'econ',text:'Econ timed essay: government intervention — write + self-mark',note:'',id:'t54'},
   ]},
-  { d: mkD(2026,5,9), phase: 2, tasks: [
-    { subj:'english', text:'English timed Paper 1 — full response, 1hr 15min', note:'Get teacher feedback if possible', id:'t055' },
-    { subj:'spanish', text:'Oral practice: record yourself speaking 3min on a topic', note:'', id:'t056' },
+  {d:mkDate(2026,5,10),phase:2,tasks:[
+    {subj:'english',text:'English timed Paper 1 — full response, 1hr15min',note:'Get teacher feedback if possible',id:'t55'},
+    {subj:'spanish',text:'Oral practice: record yourself speaking 3min on a topic',note:'',id:'t56'},
   ]},
-  { d: mkD(2026,5,10), phase: 2, tasks: [
-    { subj:'math',    text:'Math timed paper 2 — with calculator, full IB past paper', note:'', id:'t057' },
-    { subj:'cs',      text:'CS: review Boolean algebra + recursion weak spots', note:'', id:'t058' },
+  {d:mkDate(2026,5,11),phase:2,tasks:[
+    {subj:'math',text:'Math timed paper 2 — with calculator, full IB past paper',note:'',id:'t57'},
+    {subj:'cs',text:'CS: review Boolean algebra + recursion weak spots',note:'',id:'t58'},
   ]},
-  { d: mkD(2026,5,11), phase: 2, tasks: [
-    { subj:'physics', text:'Physics: gravitational fields + waves timed questions', note:'', id:'t059' },
-    { subj:'econ',    text:'Econ: full paper practice — data response + essay', note:'', id:'t060' },
+  {d:mkDate(2026,5,12),phase:2,tasks:[
+    {subj:'physics',text:'Physics: gravitational fields + waves timed questions',note:'',id:'t59'},
+    {subj:'econ',text:'Econ: full paper practice — data response + essay',note:'',id:'t60'},
   ]},
-  { d: mkD(2026,5,12), phase: 3, tasks: [
-    { subj:'cs',      text:'Final review: OOP class diagrams, SQL queries, sorting algorithms', note:'2hrs max then rest', id:'t061' },
-    { subj:'math',    text:'Formula sheet: trig identities, log laws, sequences', note:'', id:'t062' },
+  {d:mkDate(2026,5,13),phase:3,tasks:[
+    {subj:'cs',text:'Final review: OOP class diagrams, SQL queries, sorting algorithms',note:'2hrs max then rest',id:'t61'},
+    {subj:'math',text:'Formula sheet: trig identities, log laws, sequences',note:'',id:'t62'},
   ]},
-  { d: mkD(2026,5,13), phase: 3, tasks: [
-    { subj:'physics', text:'All formulas — know every equation cold', note:'2hrs then rest', id:'t063' },
-    { subj:'econ',    text:'All diagram types — draw each one from memory', note:'', id:'t064' },
+  {d:mkDate(2026,5,14),phase:3,tasks:[
+    {subj:'physics',text:'All formulas — know every equation cold',note:'2hrs then rest',id:'t63'},
+    {subj:'econ',text:'All diagram types — draw each one from memory',note:'',id:'t64'},
   ]},
-  { d: mkD(2026,5,14), phase: 3, tasks: [
-    { subj:'english', text:'Re-read key chapters Never Let Me Go + theme notes', note:'1.5hrs', id:'t065' },
-    { subj:'spanish', text:'Final vocab list + one oral practice session', note:'', id:'t066' },
+  {d:mkDate(2026,5,15),phase:3,tasks:[
+    {subj:'english',text:'Re-read key chapters Never Let Me Go + theme notes',note:'1.5hrs',id:'t65'},
+    {subj:'spanish',text:'Final vocab list + one oral practice session',note:'',id:'t66'},
   ]},
-  { d: mkD(2026,5,15), phase: 3, tasks: [
-    { subj:'cs',      text:'One final timed coding problem — calm and focused', note:'1hr only', id:'t067' },
-    { subj:'math',    text:'Skim corrections from all past papers — patterns only', note:'1hr only', id:'t068' },
-    { subj:'physics', text:'Read through your mistake log — nothing new', note:'45min', id:'t069' },
+  {d:mkDate(2026,5,16),phase:3,tasks:[
+    {subj:'cs',text:'One final timed coding problem — calm and focused',note:'1hr only',id:'t67'},
+    {subj:'math',text:'Skim corrections from all past papers — patterns only',note:'1hr only',id:'t68'},
+    {subj:'physics',text:'Read through your mistake log — nothing new',note:'45min',id:'t69'},
   ]},
-  { d: mkD(2026,5,16), phase: 3, tasks: [
-    { subj:'all',     text:'Light review of shakiest subject — 1hr MAX', note:'', id:'t070' },
-    { subj:'all',     text:'Prepare exam kit: pens, calculator, water, snacks', note:'', id:'t071' },
-    { subj:'all',     text:'Early dinner, no screens after 9pm, sleep by 10:30pm', note:'You have done the work. Trust it.', id:'t072' },
+  {d:mkDate(2026,5,17),phase:3,tasks:[
+    {subj:'all',text:'Light review of shakiest subject — 1hr MAX',note:'',id:'t70'},
+    {subj:'all',text:'Prepare exam kit: pens, calculator, water, snacks',note:'',id:'t71'},
+    {subj:'all',text:'Early dinner, no screens after 9pm, sleep by 10:30pm',note:'You have done the work. Trust it.',id:'t72'},
   ]},
 ];
 
-// ─── STATE ──────────────────────────────────────────────────────────────────
+const checked = {};
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedDate = null;
+let sadDismissed = false;
 
-const checked = JSON.parse(localStorage.getItem('ram_checked') || '{}');
-let calYear = 2026, calMonth = 3;
-let selectedDate = new Date(TODAY);
-let activeSubjectFilter = 'all';
-let collapsedSubjects = {};
+function getDayData(date){return allDays.find(x=>sameDay(x.d,date));}
+function totalTasks(){return allDays.reduce((a,d)=>a+d.tasks.length,0);}
+function doneTasks(){return Object.values(checked).filter(Boolean).length;}
+function daysLeft(){return Math.max(0,Math.ceil((EXAM_START-getToday())/(1000*60*60*24)));}
 
-function saveChecked() {
-  localStorage.setItem('ram_checked', JSON.stringify(checked));
+function pillHTML(subj){
+  const s=SC[subj]||SC.all;
+  return `<span class="subj-pill" style="background:${s.pill};color:${s.pillText}">${s.label}</span>`;
 }
 
-function toggleTask(id) {
-  checked[id] = !checked[id];
-  saveChecked();
-  renderAll();
-  showToast(checked[id] ? 'Task completed!' : 'Task unchecked');
+function taskRowHTML(task){
+  const done=checked[task.id]||false;
+  return `<div class="task-row ${done?'done':''}" onclick="toggle('${task.id}')">
+    <div class="chk ${done?'checked':''}">
+      <svg class="chk-tick" viewBox="0 0 8 8" fill="none"><polyline points="1,4 3,6 7,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="task-body">
+      <div class="task-main">${pillHTML(task.subj)}${task.text}</div>
+      ${task.note?`<div class="task-note">${task.note}</div>`:''}
+    </div>
+  </div>`;
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+function checkSadPage(){
+  if(sadDismissed) return;
+  const now = new Date();
+  const hour = now.getHours();
+  if(hour < 22) return;
+  const today = getToday();
+  const dayData = getDayData(today);
+  if(!dayData) return;
+  const unfinished = dayData.tasks.filter(t=>!checked[t.id]);
+  if(unfinished.length === 0) return;
+  showSadPage(unfinished);
 }
 
-// ─── HELPERS ────────────────────────────────────────────────────────────────
-
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const DAY_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-function getDayData(date) {
-  return DAYS_DATA.find(x => sameDay(x.d, date));
-}
-function totalTasks()  { return DAYS_DATA.reduce((a, d) => a + d.tasks.length, 0); }
-function doneTasks()   { return Object.values(checked).filter(Boolean).length; }
-function daysLeft()    { return Math.max(0, Math.ceil((EXAM_START - TODAY) / 86400000)); }
-
-function pill(subj) {
-  const s = SC[subj] || SC.all;
-  return `<span class="subj-tag" style="background:${s.bg};color:${s.text}">${s.label}</span>`;
-}
-
-function taskHTML(task) {
-  const done = checked[task.id] || false;
-  return `
-    <div class="task-item ${done ? 'done' : ''}" onclick="toggleTask('${task.id}')">
-      <div class="checkbox ${done ? 'checked' : ''}">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="task-body">
-        <div class="task-text">${pill(task.subj)}${task.text}</div>
-        ${task.note ? `<div class="task-hint">${task.note}</div>` : ''}
-      </div>
+function showSadPage(unfinished){
+  const msgs = [
+    `You had ${unfinished.length} task${unfinished.length>1?'s':''} left today and the day is over. CS isn't going to learn itself, Ram.`,
+    `It's past 10pm and ${unfinished.length} thing${unfinished.length>1?'s were':' was'} left undone today. The exam date doesn't care.`,
+    `Day's gone. ${unfinished.length} task${unfinished.length>1?'s':''} unfinished. You know what's at stake — let's not make this a habit.`,
+  ];
+  document.getElementById('sadMsg').textContent = msgs[Math.floor(Math.random()*msgs.length)];
+  let uhtml = `<div style="font-size:11px;font-weight:500;color:#A32D2D;margin-bottom:8px;">Unfinished today:</div>`;
+  unfinished.forEach(t=>{
+    uhtml+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid #F7C1C1;">
+      <div style="width:6px;height:6px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:4px;"></div>
+      <div style="font-size:12px;color:#791F1F;line-height:1.4;">${pillHTML(t.subj)}${t.text}</div>
     </div>`;
+  });
+  document.getElementById('sadUnfinished').innerHTML = uhtml;
+  document.getElementById('sadPage').classList.add('show');
 }
 
-// ─── TODAY VIEW ─────────────────────────────────────────────────────────────
+window.dismissSad = function(){
+  sadDismissed = true;
+  document.getElementById('sadPage').classList.remove('show');
+}
 
-function renderToday() {
-  const days = daysLeft(), done = doneTasks(), total = totalTasks();
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+window.doThemNow = function(){
+  sadDismissed = true;
+  document.getElementById('sadPage').classList.remove('show');
+  showView('today', document.querySelector('.nvb'));
+}
 
-  document.getElementById('sb-countdown').textContent = days;
+function renderToday(){
+  const today = getToday();
+  const dayData = getDayData(today);
+  const done=doneTasks(), total=totalTasks();
+  const pct=total>0?Math.round((done/total)*100):0;
+  const days=daysLeft();
 
-  const dayData = getDayData(TODAY);
-  const ph = dayData ? PHASES[dayData.phase] : null;
+  let html=`<div class="stats-row">
+    <div class="stat"><div class="stat-label">Days to exams</div><div class="stat-val">${days}</div><div class="stat-sub">May 17, 2026</div></div>
+    <div class="stat"><div class="stat-label">Tasks done</div><div class="stat-val">${done}</div><div class="stat-sub">of ${total} total</div></div>
+    <div class="stat"><div class="stat-label">Overall progress</div><div class="stat-val">${pct}%</div><div style="margin-top:4px;"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div></div></div>
+    <div class="stat"><div class="stat-label">Study leave</div><div class="stat-val">May 12</div><div class="stat-sub">${Math.max(0,Math.ceil((STUDY_LEAVE-today)/(1000*60*60*24)))} days away</div></div>
+  </div>`;
 
-  const dateStr = `${DAY_NAMES[TODAY.getDay()]}, ${TODAY.getDate()} ${MONTH_SHORT[TODAY.getMonth()]} 2026`;
-  document.getElementById('today-title').textContent = dateStr;
+  const WDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=`${WDAYS[today.getDay()]}, ${today.getDate()} ${MNAMES[today.getMonth()]} ${today.getFullYear()}`;
 
-  document.getElementById('today-phase-badge').innerHTML = ph
-    ? `<span class="phase-badge" style="background:${ph.color};color:${ph.text};border:1px solid ${ph.border}">${ph.name} phase</span>`
-    : '';
-
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-card-label">Days to exams</div>
-      <div class="stat-card-val">${days}</div>
-      <div class="stat-card-sub">May 17, 2026</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Tasks done</div>
-      <div class="stat-card-val">${done}</div>
-      <div class="stat-card-sub">of ${total} total</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Study leave</div>
-      <div class="stat-card-val">May 12</div>
-      <div class="stat-card-sub">${Math.max(0, Math.ceil((STUDY_LEAVE_START - TODAY) / 86400000))} days away</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Overall progress</div>
-      <div class="stat-card-val">${pct}%</div>
-      <div style="margin-top:6px;background:var(--bg4);border-radius:4px;height:5px;overflow:hidden;">
-        <div style="width:${pct}%;height:5px;background:var(--accent);border-radius:4px;transition:width 0.4s;"></div>
+  if(dayData){
+    const ph=PHASES[dayData.phase];
+    const todayDone=dayData.tasks.filter(t=>checked[t.id]).length;
+    const todayTotal=dayData.tasks.length;
+    html+=`<div class="today-card">
+      <div class="today-header">
+        <div class="today-title">${dateStr}<span class="phase-badge" style="background:${ph.color};color:${ph.text};border:0.5px solid ${ph.border}">${ph.name}</span></div>
+        <div class="today-sub">${todayDone}/${todayTotal} done today — tap to check off as you go</div>
       </div>
+      ${dayData.tasks.map(taskRowHTML).join('')}
     </div>`;
-
-  let tasksHTML = '';
-  if (dayData && dayData.tasks.length > 0) {
-    tasksHTML = `
-      <div class="today-card">
-        <div class="today-head">
-          <div>
-            <div class="today-date">Today's tasks</div>
-            <div class="today-count">${dayData.tasks.length} tasks — tap to check off</div>
-          </div>
-        </div>
-        ${dayData.tasks.map(taskHTML).join('')}
-      </div>`;
+  } else if(today >= EXAM_START){
+    html+=`<div class="today-card"><div style="padding:1.5rem;text-align:center;"><div style="font-size:15px;font-weight:500;color:#A32D2D;margin-bottom:6px;">Exam period</div><div style="font-size:13px;color:var(--color-text-secondary);">You've done the work. Go show them what you know.</div></div></div>`;
   } else {
-    tasksHTML = `
-      <div class="today-card">
-        <div style="padding:2rem;text-align:center;color:var(--text2);font-size:13px;">No study tasks today — rest up!</div>
-      </div>`;
+    html+=`<div class="today-card"><div style="padding:1.5rem;text-align:center;font-size:13px;color:var(--color-text-secondary);">No tasks today — rest up, you've earned it!</div></div>`;
   }
 
-  // upcoming days preview
-  let upcoming = '';
-  for (let i = 1; i <= 3; i++) {
-    const nd = new Date(TODAY); nd.setDate(nd.getDate() + i);
-    const nd_data = getDayData(nd);
-    if (nd_data) {
-      const nph = PHASES[nd_data.phase];
-      upcoming += `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectDay(${nd.getFullYear()},${nd.getMonth()},${nd.getDate()}); showView('calendar', null)">
-          <div>
-            <span style="font-size:12px;font-weight:500;color:var(--text);">${DAY_SHORT[nd.getDay()]} ${nd.getDate()} ${MONTH_SHORT[nd.getMonth()]}</span>
-            <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:${nph.color};color:${nph.text};margin-left:6px;">${nph.name}</span>
-          </div>
-          <span style="font-size:11px;color:var(--text3);">${nd_data.tasks.length} tasks →</span>
-        </div>`;
+  const now = new Date();
+  const hour = now.getHours();
+  if(hour >= 20 && dayData){
+    const unfinished = dayData.tasks.filter(t=>!checked[t.id]);
+    if(unfinished.length > 0 && !sadDismissed){
+      html+=`<div style="margin-top:8px;padding:10px 14px;border-radius:var(--border-radius-md);background:#FAEEDA;border:0.5px solid #EF9F27;font-size:12px;color:#633806;cursor:pointer;" onclick="showSadPage(getTodayUnfinished())">
+        Warning: ${unfinished.length} task${unfinished.length>1?'s':''} still unfinished — day ends at midnight
+      </div>`;
     }
   }
 
-  if (upcoming) {
-    tasksHTML += `
-      <div class="today-card" style="margin-top:16px;">
-        <div class="today-head"><div class="today-date">Coming up</div></div>
-        ${upcoming}
-      </div>`;
-  }
-
-  document.getElementById('today-tasks').innerHTML = tasksHTML;
+  html+=`<button onclick="sendPrompt('Help me with today\\'s study topics')" style="font-size:12px;margin-top:8px;">Ask Claude about today's topics ↗</button>`;
+  document.getElementById('view-today').innerHTML=html;
 }
 
-// ─── CALENDAR VIEW ───────────────────────────────────────────────────────────
+window.getTodayUnfinished = function(){
+  const today = getToday();
+  const dayData = getDayData(today);
+  if(!dayData) return [];
+  return dayData.tasks.filter(t=>!checked[t.id]);
+}
 
-function renderCalendar() {
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+function renderCalendar(){
+  const MNAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const today = getToday();
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
 
-  document.getElementById('cal-month-label').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <button onclick="calPrev()" style="font-size:11px;padding:3px 10px;">← prev</button>
+    <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">${MNAMES[calMonth]} ${calYear}</span>
+    <button onclick="calNext()" style="font-size:11px;padding:3px 10px;">next →</button>
+  </div>`;
 
-  let html = DAY_SHORT.map(d => `<div class="cal-day-header">${d}</div>`).join('');
-  for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell empty"></div>`;
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  html+=`<div class="cal-grid">`;
+  dayNames.forEach(d=>{html+=`<div class="cal-header-cell">${d}</div>`;});
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(calYear, calMonth, day);
-    const dayData = getDayData(date);
-    const isToday = sameDay(date, TODAY);
-    const isPast = date < TODAY && !isToday;
-    const isExam = date >= EXAM_START;
-    const isLeave = date >= STUDY_LEAVE_START && date < EXAM_START;
-    const isSel = sameDay(date, selectedDate);
+  for(let day=1;day<=daysInMonth;day++){
+    const date=new Date(calYear,calMonth,day);
+    const dayData=getDayData(date);
+    const isToday=sameDay(date,today);
+    const isPast=date<today&&!isToday;
+    const isExam=date>=EXAM_START;
+    const isLeave=date>=STUDY_LEAVE&&date<EXAM_START;
+    const isSel=selectedDate&&sameDay(date,selectedDate);
 
-    let cls = 'cal-cell';
-    if (isExam) cls += ' exam-day';
-    else if (isLeave) cls += ' study-leave';
-    if (isToday) cls += ' today';
-    else if (isSel && !isExam) cls += ' selected';
-    if (isPast) cls += ' past';
+    let cls='cal-day';
+    if(isExam) cls='cal-day exam-day';
+    else if(isLeave) cls='cal-day study-leave';
+    else if(isToday) cls+=' today';
+    else if(isSel) cls+=' selected';
+    if(isPast&&!isExam&&!isLeave) cls+=' past';
 
-    let dots = '';
-    if (dayData) {
-      const seen = {};
-      dayData.tasks.forEach(t => {
-        if (!seen[t.subj]) {
-          seen[t.subj] = true;
-          dots += `<div class="cal-dot" style="background:${(SC[t.subj]||SC.all).color}"></div>`;
-        }
+    let dots='';
+    if(dayData){
+      const seen={};
+      dayData.tasks.forEach(t=>{
+        if(!seen[t.subj]){seen[t.subj]=true;const c=SC[t.subj]||SC.all;dots+=`<div class="cal-dot" style="background:${c.dot}"></div>`;}
       });
     }
-
-    html += `<div class="${cls}" onclick="selectDay(${calYear},${calMonth},${day})">
+    html+=`<div class="${cls}" onclick="selectCalDay(${calYear},${calMonth},${day})">
       <div class="cal-num">${day}</div>
       <div class="cal-dots">${dots}</div>
     </div>`;
   }
+  html+=`</div>`;
 
-  document.getElementById('cal-grid').innerHTML = html;
-  renderDayDetail();
-}
+  html+=`<div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#EEEDFE;border:0.5px solid #7F77DD;"></div>Today</div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#FAEEDA;border:0.5px solid #EF9F27;"></div>Study leave</div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);"><div style="width:10px;height:10px;border-radius:2px;background:#FCEBEB;border:0.5px solid #F09595;"></div>Exams</div>
+  </div>`;
 
-function renderDayDetail() {
-  const sd = selectedDate;
-  const dayData = getDayData(sd);
-  const dateStr = `${DAY_NAMES[sd.getDay()]}, ${sd.getDate()} ${MONTH_SHORT[sd.getMonth()]} ${sd.getFullYear()}`;
-  const isExam = sd >= EXAM_START;
-  const isLeave = sd >= STUDY_LEAVE_START && sd < EXAM_START;
+  const sd=selectedDate||today;
+  const selData=getDayData(sd);
+  const WDAYS2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MNAMES2=['Jan','Feb','Mar','Apr','May'];
+  const selStr=`${WDAYS2[sd.getDay()]} ${sd.getDate()} ${MNAMES2[sd.getMonth()]||''}`;
 
-  let phaseStr = '';
-  if (isExam) phaseStr = 'Exam period';
-  else if (isLeave) phaseStr = 'Study leave';
-  else if (dayData) phaseStr = PHASES[dayData.phase].name + ' phase';
-
-  let bodyHTML = '';
-  if (isExam) {
-    bodyHTML = `<div style="padding:1.5rem;text-align:center;">
-      <div style="font-size:24px;margin-bottom:8px;">📝</div>
-      <div style="color:var(--danger);font-size:14px;font-weight:600;">Exam period</div>
-      <div style="color:var(--text2);font-size:12px;margin-top:4px;">Go get them, Ram!</div>
-    </div>`;
-  } else if (dayData && dayData.tasks.length > 0) {
-    bodyHTML = dayData.tasks.map(taskHTML).join('');
+  html+=`<div class="today-card"><div class="sel-day-header" style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;font-weight:500;color:var(--color-text-primary);">${selStr}</div>`;
+  if(selData&&selData.tasks.length>0){
+    html+=selData.tasks.map(taskRowHTML).join('');
+  } else if(sd>=EXAM_START){
+    html+=`<div style="padding:1rem;font-size:12px;color:#A32D2D;">Exam period — go get them!</div>`;
   } else {
-    bodyHTML = `<div style="padding:1.5rem;text-align:center;color:var(--text2);font-size:13px;">Rest day — no tasks scheduled</div>`;
+    html+=`<div style="padding:1rem;font-size:12px;color:var(--color-text-secondary);">Rest day — no tasks scheduled.</div>`;
   }
+  html+=`</div>`;
 
-  document.getElementById('day-detail').innerHTML = `
-    <div class="day-detail-head">
-      <div class="day-detail-date">${dateStr}</div>
-      ${phaseStr ? `<div class="day-detail-phase">${phaseStr}</div>` : ''}
-    </div>
-    ${bodyHTML}`;
+  document.getElementById('view-calendar').innerHTML=html;
 }
 
-window.calPrev = function() {
-  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
-  renderCalendar();
-};
-window.calNext = function() {
-  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
-  renderCalendar();
-};
-window.selectDay = function(y, m, d) {
-  selectedDate = new Date(y, m, d);
-  renderCalendar();
-};
+window.calPrev=function(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+window.calNext=function(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+window.selectCalDay=function(y,m,d){selectedDate=new Date(y,m,d);renderCalendar();}
 
-// ─── SUBJECTS VIEW ───────────────────────────────────────────────────────────
-
-function renderSubjects() {
-  const subjs = ['cs', 'physics', 'math', 'econ', 'english', 'spanish'];
-
-  // Filter chips
-  document.getElementById('subj-filter-row').innerHTML = [
-    { key: 'all', label: 'All subjects' },
-    ...subjs.map(s => ({ key: s, label: SC[s].label }))
-  ].map(({ key, label }) => {
-    const c = SC[key] || SC.all;
-    const isActive = activeSubjectFilter === key;
-    return `<button class="chip ${isActive ? 'active' : ''}" 
-      style="${isActive ? `background:${c.color};border-color:${c.color}` : ''}"
-      onclick="filterSubject('${key}')">${label}</button>`;
-  }).join('');
-
-  const filtered = activeSubjectFilter === 'all' ? subjs : [activeSubjectFilter];
-  let html = '';
-
-  filtered.forEach(s => {
-    const c = SC[s];
-    const days = DAYS_DATA.filter(d => d.tasks.some(t => t.subj === s));
-    const totalCount = days.reduce((a, d) => a + d.tasks.filter(t => t.subj === s).length, 0);
-    const doneCount = days.reduce((a, d) => a + d.tasks.filter(t => t.subj === s && checked[t.id]).length, 0);
-    const isCollapsed = collapsedSubjects[s];
-
-    html += `
-      <div class="subj-section">
-        <div class="subj-header ${isCollapsed ? 'collapsed' : ''}" onclick="toggleCollapse('${s}')">
-          <div class="subj-header-dot" style="background:${c.color}"></div>
-          <div class="subj-header-name">${c.label}</div>
-          <div class="subj-header-count">${doneCount}/${totalCount} done</div>
-          <div style="background:var(--bg4);border-radius:4px;height:5px;width:60px;overflow:hidden;margin-right:8px;">
-            <div style="width:${totalCount>0?Math.round((doneCount/totalCount)*100):0}%;height:5px;background:${c.color};border-radius:4px;"></div>
-          </div>
-          <div class="subj-header-arrow">▼</div>
+function renderSubjects(){
+  const subjs=['cs','physics','math','econ','english','spanish'];
+  let html='';
+  subjs.forEach(s=>{
+    const c=SC[s];
+    const days=allDays.filter(d=>d.tasks.some(t=>t.subj===s));
+    const totalS=days.reduce((a,d)=>a+d.tasks.filter(t=>t.subj===s).length,0);
+    html+=`<div style="margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${c.dot};"></div>
+        <span style="font-size:14px;font-weight:500;color:var(--color-text-primary);">${c.label}</span>
+        <span style="font-size:11px;color:var(--color-text-secondary);">${totalS} tasks</span>
+      </div>
+      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;">`;
+    days.forEach(day=>{
+      const MNAMES=['Jan','Feb','Mar','Apr','May'];
+      const WNAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const dstr=`${WNAMES[day.d.getDay()]} ${day.d.getDate()} ${MNAMES[day.d.getMonth()]||''}`;
+      const ph2=PHASES[day.phase];
+      const dayTasks=day.tasks.filter(t=>t.subj===s);
+      html+=`<div style="border-bottom:0.5px solid var(--color-border-tertiary);">
+        <div style="padding:5px 12px;background:var(--color-background-secondary);font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;">
+          ${dstr}<span style="font-size:9px;padding:1px 6px;border-radius:20px;background:${ph2.color};color:${ph2.text}">${ph2.name}</span>
         </div>
-        <div class="subj-body ${isCollapsed ? 'hidden' : ''}">`;
-
-    days.forEach(day => {
-      const ph = PHASES[day.phase];
-      const dstr = `${DAY_SHORT[day.d.getDay()]} ${day.d.getDate()} ${MONTH_SHORT[day.d.getMonth()]}`;
-      const dayTasks = day.tasks.filter(t => t.subj === s);
-      html += `
-        <div class="subj-day-label">
-          ${dstr}
-          <span style="font-size:9px;padding:1px 6px;border-radius:20px;background:${ph.color};color:${ph.text}">${ph.name}</span>
-        </div>
-        ${dayTasks.map(taskHTML).join('')}`;
+        ${dayTasks.map(taskRowHTML).join('')}
+      </div>`;
     });
-
-    html += `</div></div>`;
+    html+=`</div></div>`;
   });
-
-  document.getElementById('subjects-content').innerHTML = html;
+  document.getElementById('view-subjects').innerHTML=html;
 }
 
-window.filterSubject = function(s) {
-  activeSubjectFilter = s;
-  renderSubjects();
-};
-
-window.toggleCollapse = function(s) {
-  collapsedSubjects[s] = !collapsedSubjects[s];
-  renderSubjects();
-};
-
-// ─── PROGRESS VIEW ───────────────────────────────────────────────────────────
-
-function renderProgress() {
-  const total = totalTasks(), done = doneTasks();
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-  const subjs = ['cs', 'physics', 'math', 'econ', 'english', 'spanish'];
-  let subjRows = '';
-  subjs.forEach(s => {
-    const c = SC[s];
-    const st = DAYS_DATA.flatMap(d => d.tasks.filter(t => t.subj === s));
-    const sd = st.filter(t => checked[t.id]).length;
-    const sp = st.length > 0 ? Math.round((sd / st.length) * 100) : 0;
-    subjRows += `
-      <div class="prog-row">
-        <div class="prog-label" style="color:${c.color}">${c.label}</div>
-        <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${sp}%;background:${c.color}"></div></div>
-        <div class="prog-pct">${sp}%</div>
-      </div>`;
-  });
-
-  const phases = [
-    { label: 'Foundation', idx: 0 },
-    { label: 'Build',       idx: 1 },
-    { label: 'Intensify',   idx: 2 },
-    { label: 'Study leave', idx: 3 },
-  ];
-  let phaseRows = '';
-  phases.forEach(ph => {
-    const phTasks = DAYS_DATA.filter(d => d.phase === ph.idx).flatMap(d => d.tasks);
-    const phDone = phTasks.filter(t => checked[t.id]).length;
-    const phPct = phTasks.length > 0 ? Math.round((phDone / phTasks.length) * 100) : 0;
-    const phColor = PHASES[ph.idx].text;
-    phaseRows += `
-      <div class="prog-row">
-        <div class="prog-label" style="width:90px;color:${phColor};font-size:11px">${ph.label}</div>
-        <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${phPct}%;background:${phColor}"></div></div>
-        <div class="prog-pct">${phDone}/${phTasks.length}</div>
-      </div>`;
-  });
-
-  document.getElementById('prog-grid').innerHTML = `
-    <div class="prog-card" style="grid-column:1/-1">
-      <div class="overall-ring">
-        <div class="ring-num">${pct}%</div>
-        <div class="ring-label">overall completion</div>
-        <div class="ring-sub">${done} of ${total} tasks done</div>
-      </div>
-      <div style="background:var(--bg4);border-radius:6px;height:10px;overflow:hidden;">
-        <div style="width:${pct}%;height:10px;background:var(--accent);border-radius:6px;transition:width 0.5s;"></div>
-      </div>
+function renderProgress(){
+  const total=totalTasks(),done=doneTasks();
+  const pct=total>0?Math.round((done/total)*100):0;
+  let html=`<div style="margin-bottom:1.25rem;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Overall completion</span>
+      <span style="font-size:13px;color:var(--color-text-secondary);">${done} / ${total}</span>
     </div>
-    <div class="prog-card">
-      <div class="prog-card-title">By subject</div>
-      ${subjRows}
-    </div>
-    <div class="prog-card">
-      <div class="prog-card-title">By phase</div>
-      ${phaseRows}
+    <div class="progress-bar-wrap" style="height:10px;"><div class="progress-bar" style="width:${pct}%;height:10px;"></div></div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;">${pct}% complete</div>
+  </div>`;
+
+  const subjs=['cs','physics','math','econ','english','spanish'];
+  html+=`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:1rem;">`;
+  subjs.forEach(s=>{
+    const c=SC[s];
+    const subjTasks=allDays.flatMap(d=>d.tasks.filter(t=>t.subj===s));
+    const subjDone=subjTasks.filter(t=>checked[t.id]).length;
+    const subjTotal=subjTasks.length;
+    const subjPct=subjTotal>0?Math.round((subjDone/subjTotal)*100):0;
+    html+=`<div class="subj-row">
+      <div style="display:flex;align-items:center;gap:6px;width:70px;flex-shrink:0;font-size:12px;font-weight:500;color:var(--color-text-primary);">
+        <div style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0;"></div>${c.label}
+      </div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="height:8px;border-radius:4px;background:${c.dot};width:${subjPct}%;transition:width 0.3s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-secondary);width:40px;text-align:right;">${subjDone}/${subjTotal}</div>
     </div>`;
+  });
+  html+=`</div>`;
+
+  const phaseList=[
+    {label:'Phase 1 — Foundation',idx:0},
+    {label:'Phase 2 — Build',idx:1},
+    {label:'Phase 3 — Intensify',idx:2},
+    {label:'Study leave',idx:3},
+  ];
+  html+=`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">`;
+  phaseList.forEach(ph=>{
+    const phColor=PHASES[ph.idx];
+    const phTasks=allDays.filter(d=>d.phase===ph.idx).flatMap(d=>d.tasks);
+    const phDone=phTasks.filter(t=>checked[t.id]).length;
+    const phTotal=phTasks.length;
+    const phPct=phTotal>0?Math.round((phDone/phTotal)*100):0;
+    html+=`<div class="subj-row">
+      <div style="font-size:11px;width:100px;flex-shrink:0;color:var(--color-text-primary);">${ph.label.split('—')[0].trim()}</div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="height:8px;border-radius:4px;background:${phColor.text};width:${phPct}%;transition:width 0.3s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-secondary);width:40px;text-align:right;">${phDone}/${phTotal}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('view-progress').innerHTML=html;
 }
 
-// ─── NAVIGATION ─────────────────────────────────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const WDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('liveTime');
+  if(el) el.textContent=`${WDAYS[now.getDay()]} ${now.getDate()} ${MNAMES[now.getMonth()]} — ${h}:${m}`;
+  const cb=document.getElementById('countdown-badge');
+  if(cb) cb.textContent=`${daysLeft()} days to exams`;
+}
 
-window.showView = function(v, btn) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (v === 'calendar') renderCalendar();
-  if (v === 'subjects') renderSubjects();
-  if (v === 'progress') renderProgress();
-};
-
-function renderAll() {
+function renderAll(){
   renderToday();
-  const active = document.querySelector('.view.active');
-  if (active && active.id === 'view-calendar') renderCalendar();
-  if (active && active.id === 'view-subjects') renderSubjects();
-  if (active && active.id === 'view-progress') renderProgress();
+  renderCalendar();
+  renderSubjects();
+  renderProgress();
+  updateClock();
 }
 
-window.toggleTask = function(id) {
-  checked[id] = !checked[id];
-  saveChecked();
-  renderAll();
-  showToast(checked[id] ? 'Task completed ✓' : 'Task unchecked');
-};
+window.showView=function(v,btn){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.nvb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('show');
+  if(btn) btn.classList.add('active');
+  else document.querySelector('.nvb').classList.add('active');
+}
 
-// ─── INIT ───────────────────────────────────────────────────────────────────
+window.toggle=function(id){
+  checked[id]=!checked[id];
+  renderAll();
+}
+
 renderAll();
+setInterval(()=>{updateClock();checkSadPage();renderToday();},60000);
 </script>
-</body>
-</html>
